@@ -2,7 +2,9 @@
 
 import { useSession, signIn } from 'next-auth/react';
 import { useEffect, useState } from 'react';
-import { Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Button } from '@mui/material';
+import {
+  Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Button,
+} from '@mui/material';
 import { styled } from '@mui/system';
 
 const StyledTableCell = styled(TableCell)({
@@ -70,15 +72,16 @@ const Leaderboard = () => {
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="md"> {/* Slightly narrower container */}
       <Box my={4}>
         <Typography variant="h4" align="center" gutterBottom>
           Leaderboard
         </Typography>
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} elevation={3}> {/* Add elevation for depth */}
           <Table>
             <TableHead>
               <TableRow>
+                <StyledTableCell><Typography variant="h6">Rank</Typography></StyledTableCell>
                 <StyledTableCell><Typography variant="h6">Player</Typography></StyledTableCell>
                 <StyledTableCell><Typography variant="h6">Points</Typography></StyledTableCell>
               </TableRow>
@@ -86,8 +89,13 @@ const Leaderboard = () => {
             <TableBody>
               {players.map((player, index) => (
                 <TableRow key={index}>
-                  <StyledTableCell>{player.name}</StyledTableCell>
-                  <StyledTableCell>{player.points}</StyledTableCell>
+                  <TableCell>{index + 1}</TableCell> {/* Show rank */}
+                  <TableCell>
+                    {player.name}
+                  </TableCell>
+                  <TableCell>
+                    {player.points}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -118,14 +126,27 @@ const calculateLeaderboard = (data: any[][]): Player[] => {
       break;
     }
 
-    for (let j = 0; j < header.length; j++) {
-      const columnName = header[j];
-      if (![header[winnerIndex], 'Date', 'Match', 'Team 1', 'Team 2', 'POTM'].includes(columnName)) {
-        if (!players[columnName]) {
-          players[columnName] = 0;
+    if (winner === "DRAW") {
+      // If the match result is a draw, award 5 points to all players
+      header.forEach(columnName => {
+        if (![header[winnerIndex], 'Date', 'Match', 'Team 1', 'Team 2', 'POTM'].includes(columnName)) {
+          if (!players[columnName]) {
+            players[columnName] = 0;
+          }
+          players[columnName] += 5;
         }
-        if (row[j] === winner) {
-          players[columnName] += 10;
+      });
+    } else {
+      // Process points for match winner
+      for (let j = 0; j < header.length; j++) {
+        const columnName = header[j];
+        if (![header[winnerIndex], 'Date', 'Match', 'Team 1', 'Team 2', 'POTM'].includes(columnName)) {
+          if (!players[columnName]) {
+            players[columnName] = 0;
+          }
+          if (row[j] === winner) {
+            players[columnName] += 10;
+          }
         }
       }
     }
@@ -135,3 +156,4 @@ const calculateLeaderboard = (data: any[][]): Player[] => {
     .map(([name, points]) => ({ name, points }))
     .sort((a, b) => b.points - a.points); // Sort by points in descending order
 };
+
