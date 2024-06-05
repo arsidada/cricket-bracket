@@ -15,7 +15,9 @@ export default function RootLayout({
       <body>
         <SessionProvider>
           <NavBar />
-          {children}
+          <div style={{ marginTop: '80px' }}>
+            {children}
+          </div>
         </SessionProvider>
       </body>
     </html>

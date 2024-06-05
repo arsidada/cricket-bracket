@@ -45,7 +45,7 @@ const NavBar: React.FC = () => {
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: 'black' }}>
+      <AppBar position="fixed" sx={{ backgroundColor: 'black' }}>
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center' }}>
             T20 World Cup Bracket Challenge
