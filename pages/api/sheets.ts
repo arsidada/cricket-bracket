@@ -14,7 +14,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Decode the base64-encoded credentials.json content from the environment variable
     const credentials = JSON.parse(
       Buffer.from(process.env.GOOGLE_CREDENTIALS!, 'base64').toString('utf-8')
     );
@@ -33,12 +32,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
-    const response = await sheets.spreadsheets.values.get({
+    const groupStageResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'Predictions Overview!A1:Z1000', // Adjust the range as needed
+      range: 'Predictions Overview!A1:Z1000',
     });
 
-    return res.status(200).json(response.data.values);
+    const super8Response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+      range: 'Super8!A1:Z1000',
+    });
+
+    const linksResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+      range: 'Links!A1:C1000',
+    });
+
+    return res.status(200).json({
+      groupStage: groupStageResponse.data.values,
+      super8: super8Response.data.values,
+      links: linksResponse.data.values,
+    });
   } catch (error) {
     console.error('Error fetching Google Sheets data:', error);
     return res.status(500).json({ error: 'Error fetching data' });
