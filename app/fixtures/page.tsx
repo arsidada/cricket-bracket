@@ -233,6 +233,6 @@ const transformData = (data: any[][], isSuper8: boolean): Fixture[] => {
     fixtures.push(fixture);
   }
 
-  const fixturesToShow = lastCompletedFixtureIndex + 1 < fixtures.length ? lastCompletedFixtureIndex + 3 : fixtures.length;
+  const fixturesToShow = lastCompletedFixtureIndex + 1 < fixtures.length ? lastCompletedFixtureIndex + 2 : fixtures.length;
   return fixtures.slice(0, fixturesToShow).reverse();
 };
