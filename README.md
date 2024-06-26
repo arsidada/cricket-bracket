@@ -1,5 +1,7 @@
 # Cricket Bracket
 
+[![Vercel](https://vercelbadge.vercel.app/api/arsidada/cricket-bracket)](https://vercel.com/arsidada/cricket-bracket)
+
 This is a Next.js application that displays a leaderboard and fixtures for a cricket bracket challenge. It fetches data from a Google Sheet and displays the results, including group stage, Super 8, playoffs, and bonus points.
 
 ## Features
