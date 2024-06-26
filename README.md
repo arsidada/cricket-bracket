@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Cricket Bracket Leaderboard
+
+This is a Next.js application that displays a leaderboard for a cricket bracket challenge. It fetches data from a Google Sheet and displays the results, including group stage, Super 8, playoffs, and bonus points.
+
+## Features
+
+- **Leaderboard**: Displays the total points for each player, including points breakdown by group stage, Super 8, playoffs, and bonuses.
+- **Responsive Design**: Optimized for mobile users, with a collapsible points breakdown for each player.
+- **Google Sheets Integration**: Fetches data from a Google Sheet to populate the leaderboard.
+- **Authentication**: Uses NextAuth.js for user authentication.
+
+## Technologies Used
+
+- Next.js
+- React
+- Material-UI
+- NextAuth.js
+- Google Sheets API
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js (version 14.x or later)
+- npm (version 6.x or later)
+- Google Cloud project with Sheets API enabled
+- Google Sheets with the necessary data
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/yourusername/cricket-bracket-leaderboard.git
+   cd cricket-bracket-leaderboard
+   ```
+
+2. Install dependencies:
+
+   ```bash
+    npm install
+    ```
+
+3. Create a .env.local file in the root directory and add your environment variables:
+
+   ```bash
+    NEXTAUTH_URL=http://localhost:3000
+    GOOGLE_CREDENTIALS=your_google_credentials_base64_encoded
+    GOOGLE_SHEET_ID=your_google_sheet_id
+    ```
+
+4. Run the development server:
+
+    ```bash
+    npm run dev
+    Open http://localhost:3000 with your browser to see the result.
+    ```
+
+### Environment Variables
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXTAUTH_URL: The URL of your Next.js application.
+GOOGLE_CREDENTIALS: Base64 encoded string of your Google service account credentials JSON.
+GOOGLE_SHEET_ID: The ID of your Google Sheet.
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project Structure
+```bash
+.
+├── app
+│   └── leaderboard
+│       └── page.tsx
+│   └── fixtures
+│       └── page.tsx
+├── pages
+│   └── api
+│       └── sheets.ts
+├── public
+├── styles
+├── .env.local.example
+├── README.md
+├── next.config.js
+├── package.json
+└── tsconfig.json
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Components
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Leaderboard: Displays the ranking of players with collapsible rows to show points breakdown.
+Fixtures: Displays the fixtures with user predictions and results.
 
-## Learn More
+## API Endpoints
 
-To learn more about Next.js, take a look at the following resources:
+/api/sheets: Fetches data from the Google Sheets.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Authentication
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+The application uses NextAuth.js for authentication. Users need to sign in to view the leaderboard and fixtures.
 
-## Deploy on Vercel
+## Usage
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+View Leaderboard: Navigate to the leaderboard page to see the rankings and points breakdown.
+View Fixtures: Navigate to the fixtures page to see the matches and user predictions.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Deployment
+
+To deploy this project, you can use Vercel or any other hosting service that supports Next.js applications.
+
+## Deploying to Vercel
+
+1. Install the Vercel CLI:
+
+```bash
+npm install -g vercel
+```
+
+2. Deploy the application:
+
+```bash
+vercel
+```
+
+3. ollow the prompts to complete the deployment.
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+This project is licensed under the MIT License.
+
+```vbnet
+This README includes an overview of the project, technologies used, installation instructions, environment variables, project structure, components, API endpoints, authentication, usage, deployment instructions, and contribution guidelines. Adjust the content as needed to fit your project's specifics.
+```
