@@ -125,6 +125,7 @@ const Leaderboard = () => {
                                 <TableCell>Super8</TableCell>
                                 <TableCell>Playoffs</TableCell>
                                 <TableCell>Bonuses</TableCell>
+                                <TableCell>Time</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -133,6 +134,7 @@ const Leaderboard = () => {
                                 <TableCell>{player.super8Points}</TableCell>
                                 <TableCell>{player.playoffPoints}</TableCell>
                                 <TableCell>{player.bonusPoints}</TableCell>
+                                <TableCell>{player.timestamp}</TableCell>
                               </TableRow>
                             </TableBody>
                           </Table>
