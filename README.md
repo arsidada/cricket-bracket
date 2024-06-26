@@ -1,6 +1,6 @@
-# Cricket Bracket Leaderboard
+# Cricket Bracket
 
-This is a Next.js application that displays a leaderboard for a cricket bracket challenge. It fetches data from a Google Sheet and displays the results, including group stage, Super 8, playoffs, and bonus points.
+This is a Next.js application that displays a leaderboard and fixtures for a cricket bracket challenge. It fetches data from a Google Sheet and displays the results, including group stage, Super 8, playoffs, and bonus points.
 
 ## Features
 
@@ -30,16 +30,16 @@ This is a Next.js application that displays a leaderboard for a cricket bracket 
 
 1. Clone the repository:
 
-   ```bash
-   git clone https://github.com/yourusername/cricket-bracket-leaderboard.git
-   cd cricket-bracket-leaderboard
-   ```
+```bash
+git clone https://github.com/yourusername/cricket-bracket-leaderboard.git
+cd cricket-bracket-leaderboard
+```
 
 2. Install dependencies:
 
-   ```bash
-    npm install
-    ```
+```bash
+npm install
+```
 
 3. Create a .env.local file in the root directory and add your environment variables:
 
@@ -53,17 +53,20 @@ This is a Next.js application that displays a leaderboard for a cricket bracket 
 
     ```bash
     npm run dev
-    Open http://localhost:3000 with your browser to see the result.
     ```
 
+5. Open <http://localhost:3000> with your browser to see the result.
+
 ### Environment Variables
+
 ```bash
 NEXTAUTH_URL: The URL of your Next.js application.
 GOOGLE_CREDENTIALS: Base64 encoded string of your Google service account credentials JSON.
 GOOGLE_SHEET_ID: The ID of your Google Sheet.
 ```
 
-## Project Structure
+### Project Structure
+
 ```bash
 .
 ├── app
@@ -105,27 +108,28 @@ View Fixtures: Navigate to the fixtures page to see the matches and user predict
 
 To deploy this project, you can use Vercel or any other hosting service that supports Next.js applications.
 
-## Deploying to Vercel
+### Deploying to Vercel
 
-1. Install the Vercel CLI:
+1.Install the Vercel CLI:
 
 ```bash
 npm install -g vercel
 ```
 
-2. Deploy the application:
+2.Deploy the application:
 
 ```bash
 vercel
 ```
 
-3. ollow the prompts to complete the deployment.
+3.ollow the prompts to complete the deployment.
 
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
 ## License
+
 This project is licensed under the MIT License.
 
 ```vbnet
