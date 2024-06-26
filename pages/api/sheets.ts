@@ -32,25 +32,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
-    const groupStageResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'Predictions Overview!A1:Z1000',
-    });
 
-    const super8Response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'Super8!A1:Z1000',
-    });
-
-    const linksResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'Links!A1:C1000',
-    });
+    const [groupStageResponse, super8Response, playoffsResponse, linksResponse, bonusesResponse] = await Promise.all([
+      sheets.spreadsheets.values.get({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+        range: 'Predictions Overview!A1:Z1000',
+      }),
+      sheets.spreadsheets.values.get({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+        range: 'Super8!A1:Z1000',
+      }),
+      sheets.spreadsheets.values.get({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+        range: 'Playoffs!A1:Z1000',
+      }),
+      sheets.spreadsheets.values.get({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+        range: 'Links!A1:C1000',
+      }),
+      sheets.spreadsheets.values.get({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+        range: 'Bonuses Overview!A1:Z1000',
+      }),
+    ]);
 
     return res.status(200).json({
       groupStage: groupStageResponse.data.values,
       super8: super8Response.data.values,
+      playoffs: playoffsResponse.data.values,
       links: linksResponse.data.values,
+      bonuses: bonusesResponse.data.values,
     });
   } catch (error) {
     console.error('Error fetching Google Sheets data:', error);

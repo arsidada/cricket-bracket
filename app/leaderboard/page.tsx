@@ -1,10 +1,12 @@
 // app/leaderboard/page.tsx
 'use client';
 
+import React from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useEffect, useState } from 'react';
-import { Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Button } from '@mui/material';
+import { Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Button, IconButton, Collapse } from '@mui/material';
 import { styled } from '@mui/system';
+import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 
 const StyledTableCell = styled(TableCell)({
   backgroundColor: '#f5f5f5',
@@ -12,7 +14,11 @@ const StyledTableCell = styled(TableCell)({
 
 interface Player {
   name: string;
-  points: number;
+  groupPoints: number;
+  super8Points: number;
+  playoffPoints: number;
+  bonusPoints: number;
+  totalPoints: number;
   timestamp: string;
 }
 
@@ -20,6 +26,7 @@ const Leaderboard = () => {
   const { data: session, status } = useSession();
   const [players, setPlayers] = useState<Player[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [openRows, setOpenRows] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,7 +34,7 @@ const Leaderboard = () => {
         const response = await fetch('/api/sheets');
         const result = await response.json();
         if (response.ok) {
-          const playersData = calculateLeaderboard(result.groupStage, result.super8, result.links);
+          const playersData = calculateLeaderboard(result.groupStage, result.super8, result.playoffs, result.bonuses, result.links);
           setPlayers(playersData);
         } else {
           setError(result.error);
@@ -45,6 +52,10 @@ const Leaderboard = () => {
       fetchData();
     }
   }, [session]);
+
+  const handleRowClick = (playerName: string) => {
+    setOpenRows(prev => ({ ...prev, [playerName]: !prev[playerName] }));
+  };
 
   if (status === 'loading') {
     return <Typography align="center" color="primary">Loading...</Typography>;
@@ -81,20 +92,55 @@ const Leaderboard = () => {
           <Table>
             <TableHead>
               <TableRow>
+                <StyledTableCell />
                 <StyledTableCell><Typography variant="h6">Rank</Typography></StyledTableCell>
                 <StyledTableCell><Typography variant="h6">Player</Typography></StyledTableCell>
-                <StyledTableCell><Typography variant="h6">Points</Typography></StyledTableCell>
-                {/* <StyledTableCell><Typography variant="h6">Submission</Typography></StyledTableCell> */}
+                <StyledTableCell><Typography variant="h6">Total Points</Typography></StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {players.map((player, index) => (
-                <TableRow key={index}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{player.name}</TableCell>
-                  <TableCell>{player.points}</TableCell>
-                  {/* <TableCell>{player.timestamp}</TableCell> */}
-                </TableRow>
+                <React.Fragment key={player.name}>
+                  <TableRow key={player.name} onClick={() => handleRowClick(player.name)}>
+                    <TableCell>
+                      <IconButton size="small">
+                        {openRows[player.name] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                      </IconButton>
+                    </TableCell>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{player.name}</TableCell>
+                    <TableCell>{player.totalPoints}</TableCell>
+                  </TableRow>
+                  <TableRow key={`${player.name}-details`}>
+                    <TableCell colSpan={4} style={{ paddingBottom: 0, paddingTop: 0 }}>
+                      <Collapse in={openRows[player.name]} timeout="auto" unmountOnExit>
+                        <Box margin={1}>
+                          <Typography variant="h6" gutterBottom component="div">
+                            Points Breakdown
+                          </Typography>
+                          <Table size="small" aria-label="points breakdown">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>Groups</TableCell>
+                                <TableCell>Super8</TableCell>
+                                <TableCell>Playoffs</TableCell>
+                                <TableCell>Bonuses</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              <TableRow key={`${player.name}-points`}>
+                                <TableCell>{player.groupPoints}</TableCell>
+                                <TableCell>{player.super8Points}</TableCell>
+                                <TableCell>{player.playoffPoints}</TableCell>
+                                <TableCell>{player.bonusPoints}</TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </Box>
+                      </Collapse>
+                    </TableCell>
+                  </TableRow>
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>
@@ -106,81 +152,94 @@ const Leaderboard = () => {
 
 export default Leaderboard;
 
-const calculateLeaderboard = (groupStageData: any[][], super8Data: any[][], linksData: any[][]): Player[] => {
-  const header = groupStageData[0];
-  const players: { [key: string]: { points: number, timestamp: string } } = {};
+const calculateLeaderboard = (groupStageData: any[][], super8Data: any[][], playoffsData: any[][], bonusesData: any[][], linksData: any[][]): Player[] => {
+  const players: { [key: string]: { groupPoints: number, super8Points: number, playoffPoints: number, bonusPoints: number, totalPoints: number, timestamp: string } } = {};
 
-  const winnerIndex = header.indexOf('Winner');
+  const processPredictions = (data: any[][], pointsPerCorrectPick: number, stage: string) => {
+    const header = data[0];
+    const winnerIndex = header.indexOf('Winner');
 
-  if (winnerIndex === -1) {
-    throw new Error("Winner column not found");
-  }
-
-  // Process Group Stage
-  for (let i = 1; i < groupStageData.length; i++) {
-    const row = groupStageData[i];
-    const winner = row[winnerIndex];
-
-    if (!winner) {
-      break;
+    if (winnerIndex === -1) {
+      throw new Error("Winner column not found");
     }
 
-    if (winner === "DRAW") {
-      header.forEach(columnName => {
-        if (![header[winnerIndex], 'Date', 'Match', 'Team 1', 'Team 2', 'POTM'].includes(columnName)) {
-          if (!players[columnName]) {
-            players[columnName] = { points: 0, timestamp: '' };
-          }
-          players[columnName].points += 5;
-        }
-      });
-    } else {
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const winner = row[winnerIndex];
+
+      if (!winner) {
+        continue;
+      }
+
       for (let j = 0; j < header.length; j++) {
-        const columnName = header[j];
-        if (![header[winnerIndex], 'Date', 'Match', 'Team 1', 'Team 2', 'POTM'].includes(columnName)) {
-          if (!players[columnName]) {
-            players[columnName] = { points: 0, timestamp: '' };
+        const playerName = header[j];
+        if (!['Date', 'Match', 'Team 1', 'Team 2', 'Winner', 'POTM'].includes(playerName)) {
+          if (!players[playerName]) {
+            players[playerName] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '' };
           }
-          if (row[j] === winner) {
-            players[columnName].points += 10;
+          if (winner === "DRAW") {
+            players[playerName].totalPoints += 5;
+            if (stage === "Group Stage") {
+              players[playerName].groupPoints += 5;
+            } else if (stage === "Super 8") {
+              players[playerName].super8Points += 5;
+            } else if (stage === "Playoffs Semi-finals" || stage === "Playoffs Final") {
+              players[playerName].playoffPoints += 5;
+            }
+          } else if (row[j] === winner) {
+            players[playerName].totalPoints += pointsPerCorrectPick;
+            if (stage === "Group Stage") {
+              players[playerName].groupPoints += pointsPerCorrectPick;
+            } else if (stage === "Super 8") {
+              players[playerName].super8Points += pointsPerCorrectPick;
+            } else if (stage === "Playoffs Semi-finals" || stage === "Playoffs Final") {
+              players[playerName].playoffPoints += pointsPerCorrectPick;
+            }
           }
         }
       }
     }
-  }
+  };
 
-  // Process Super 8
-  for (let i = 1; i < super8Data.length; i++) {
-    const row = super8Data[i];
-    const winner = row[winnerIndex];
+  // Process Group Stage, Super 8, and Playoffs
+  processPredictions(groupStageData, 10, "Group Stage");
+  processPredictions(super8Data, 15, "Super 8");
+  processPredictions(playoffsData.slice(0, 2), 20, "Playoffs Semi-finals"); // Semi-finals
+  processPredictions(playoffsData.slice(3, 4), 30, "Playoffs Final"); // Final
 
-    if (!winner) {
-      break;
+  // Process Bonuses
+  const processBonuses = (data: any[][]) => {
+    const header = data[0];
+    const winnerIndex = header.indexOf('WINNER');
+
+    if (winnerIndex === -1) {
+      throw new Error("WINNER column not found in bonuses");
     }
 
-    if (winner === "DRAW") {
-      header.forEach(columnName => {
-        if (![header[winnerIndex], 'Date', 'Match', 'Team 1', 'Team 2', 'POTM'].includes(columnName)) {
-          if (!players[columnName]) {
-            players[columnName] = { points: 0, timestamp: '' };
-          }
-          players[columnName].points += 5;
-        }
-      });
-    } else {
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const winner = row[winnerIndex];
+
+      if (!winner) {
+        continue;
+      }
+
       for (let j = 0; j < header.length; j++) {
-        const columnName = header[j];
-        if (![header[winnerIndex], 'Date', 'Match', 'Team 1', 'Team 2', 'POTM'].includes(columnName)) {
-          if (!players[columnName]) {
-            players[columnName] = { points: 0, timestamp: '' };
+        const playerName = header[j];
+        if (playerName !== 'Category' && playerName !== 'WINNER') {
+          if (!players[playerName]) {
+            players[playerName] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '' };
           }
           if (row[j] === winner) {
-            players[columnName].points += 15;
+            players[playerName].bonusPoints += 10;
+            players[playerName].totalPoints += 10;
           }
         }
       }
     }
-  }
+  };
+
+  processBonuses(bonusesData);
 
   // Add timestamps
   const linksHeader = linksData[0];
@@ -198,6 +257,6 @@ const calculateLeaderboard = (groupStageData: any[][], super8Data: any[][], link
   }
 
   return Object.entries(players)
-    .map(([name, { points, timestamp }]) => ({ name, points, timestamp }))
-    .sort((a, b) => b.points - a.points || new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    .map(([name, { groupPoints, super8Points, playoffPoints, bonusPoints, totalPoints, timestamp }]) => ({ name, groupPoints, super8Points, playoffPoints, bonusPoints, totalPoints, timestamp }))
+    .sort((a, b) => b.totalPoints - a.totalPoints || new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 };

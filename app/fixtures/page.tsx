@@ -45,8 +45,10 @@ const Fixtures = () => {
   const { data: session, status } = useSession();
   const [groupStageFixtures, setGroupStageFixtures] = useState<Fixture[]>([]);
   const [super8Fixtures, setSuper8Fixtures] = useState<Fixture[]>([]);
+  const [playoffFixtures, setPlayoffFixtures] = useState<Fixture[]>([]);
   const [groupCollapsed, setGroupCollapsed] = useState(true);
-  const [super8Collapsed, setSuper8Collapsed] = useState(false);
+  const [super8Collapsed, setSuper8Collapsed] = useState(true);
+  const [playoffCollapsed, setPlayoffCollapsed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,10 +57,12 @@ const Fixtures = () => {
         const response = await fetch('/api/sheets');
         const result = await response.json();
         if (response.ok) {
-          const groupStageData = transformData(result.groupStage, false);
-          const super8Data = transformData(result.super8, true);
+          const groupStageData = transformData(result.groupStage);
+          const super8Data = transformData(result.super8);
+          const playoffData = transformData(result.playoffs);
           setGroupStageFixtures(groupStageData);
           setSuper8Fixtures(super8Data);
+          setPlayoffFixtures(playoffData);
         } else {
           setError(result.error);
         }
@@ -97,7 +101,7 @@ const Fixtures = () => {
     return <Typography align="center" color="error">Error: {error}</Typography>;
   }
 
-  if (groupStageFixtures.length === 0 && super8Fixtures.length === 0) {
+  if (groupStageFixtures.length === 0 && super8Fixtures.length === 0 && playoffFixtures.length === 0) {
     return <Typography align="center" color="primary">Loading...</Typography>;
   }
 
@@ -107,6 +111,10 @@ const Fixtures = () => {
 
   const handleSuper8Toggle = () => {
     setSuper8Collapsed(!super8Collapsed);
+  };
+
+  const handlePlayoffToggle = () => {
+    setPlayoffCollapsed(!playoffCollapsed);
   };
 
   const renderFixtures = (fixtures: Fixture[]) => (
@@ -164,6 +172,19 @@ const Fixtures = () => {
           Fixtures
         </Typography>
 
+        <ClickableHeader onClick={handlePlayoffToggle} mt={4}>
+          <Typography variant="h5" gutterBottom>Playoffs</Typography>
+          <IconButton>
+            {playoffCollapsed ? <ExpandMore /> : <ExpandLess />}
+          </IconButton>
+        </ClickableHeader>
+        <Collapse in={!playoffCollapsed}>
+          {/* {renderFixtures(playoffFixtures)} */}
+          <Typography variant="h6" gutterBottom>
+            <div>Coming soon...</div>
+          </Typography>
+        </Collapse>
+
         <ClickableHeader onClick={handleSuper8Toggle}>
           <Typography variant="h5" gutterBottom>Super 8</Typography>
           <IconButton>
@@ -190,7 +211,7 @@ const Fixtures = () => {
 
 export default Fixtures;
 
-const transformData = (data: any[][], isSuper8: boolean): Fixture[] => {
+const transformData = (data: any[][]): Fixture[] => {
   const header = data[0];
   const fixtures: Fixture[] = [];
 
@@ -208,6 +229,9 @@ const transformData = (data: any[][], isSuper8: boolean): Fixture[] => {
 
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
+    if (row[dateIndex] === 'Date' && row[matchIndex] === 'Match') {
+      continue; // Skip the additional header row in Playoffs tab
+    }
     const winner = row[winnerIndex];
 
     if (winner) {
@@ -233,6 +257,9 @@ const transformData = (data: any[][], isSuper8: boolean): Fixture[] => {
     fixtures.push(fixture);
   }
 
-  const fixturesToShow = lastCompletedFixtureIndex + 1 < fixtures.length ? lastCompletedFixtureIndex + 2 : fixtures.length;
+  let fixturesToShow = lastCompletedFixtureIndex + 1 < fixtures.length ? lastCompletedFixtureIndex + 1 : fixtures.length;
+  if (fixturesToShow == 0) {
+    fixturesToShow = lastCompletedFixtureIndex + 1 < fixtures.length ? lastCompletedFixtureIndex + 2 : fixtures.length;
+  }
   return fixtures.slice(0, fixturesToShow).reverse();
 };
