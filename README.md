@@ -5,6 +5,7 @@ This is a Next.js application that displays a leaderboard and fixtures for a cri
 ## Features
 
 - **Leaderboard**: Displays the total points for each player, including points breakdown by group stage, Super 8, playoffs, and bonuses.
+- **Fixtures**: Displays the picks for each player, sorted by newest first and grouped by group stage, Super 8 and playoffs.
 - **Responsive Design**: Optimized for mobile users, with a collapsible points breakdown for each player.
 - **Google Sheets Integration**: Fetches data from a Google Sheet to populate the leaderboard.
 - **Authentication**: Uses NextAuth.js for user authentication.
