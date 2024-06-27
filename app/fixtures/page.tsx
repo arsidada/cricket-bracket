@@ -179,10 +179,7 @@ const Fixtures = () => {
           </IconButton>
         </ClickableHeader>
         <Collapse in={!playoffCollapsed}>
-          {/* {renderFixtures(playoffFixtures)} */}
-          <Typography variant="h6" gutterBottom>
-            <div>Coming soon...</div>
-          </Typography>
+          {renderFixtures(playoffFixtures)}
         </Collapse>
 
         <ClickableHeader onClick={handleSuper8Toggle}>
