@@ -206,8 +206,8 @@ const calculateLeaderboard = (groupStageData: any[][], super8Data: any[][], play
   // Process Group Stage, Super 8, and Playoffs
   processPredictions(groupStageData, 10, "Group Stage");
   processPredictions(super8Data, 15, "Super 8");
-  processPredictions(playoffsData.slice(0, 2), 20, "Playoffs Semi-finals"); // Semi-finals
-  processPredictions(playoffsData.slice(3, 4), 30, "Playoffs Final"); // Final
+  processPredictions(playoffsData.slice(0, 3), 20, "Playoffs Semi-finals"); // Semi-finals
+  processPredictions(playoffsData.slice(3, 5), 30, "Playoffs Final"); // Final
 
   // Process Bonuses
   const processBonuses = (data: any[][]) => {
