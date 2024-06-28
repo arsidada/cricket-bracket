@@ -119,21 +119,25 @@ const Leaderboard = () => {
                             Points Breakdown
                           </Typography>
                           <Table size="small" aria-label="points breakdown">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell>Groups</TableCell>
-                                <TableCell>Super8</TableCell>
-                                <TableCell>Playoffs</TableCell>
-                                <TableCell>Bonuses</TableCell>
-                                <TableCell>Time</TableCell>
-                              </TableRow>
-                            </TableHead>
                             <TableBody>
-                              <TableRow key={`${player.name}-points`}>
+                              <TableRow key={`${player.name}-groupPoints`}>
+                                <TableCell>Groups</TableCell>
                                 <TableCell>{player.groupPoints}</TableCell>
+                              </TableRow>
+                              <TableRow key={`${player.name}-super8Points`}>
+                                <TableCell>Super8</TableCell>
                                 <TableCell>{player.super8Points}</TableCell>
+                              </TableRow>
+                              <TableRow key={`${player.name}-playoffPoints`}>
+                                <TableCell>Playoffs</TableCell>
                                 <TableCell>{player.playoffPoints}</TableCell>
+                              </TableRow>
+                              <TableRow key={`${player.name}-bonusPoints`}>
+                                <TableCell>Bonuses</TableCell>
                                 <TableCell>{player.bonusPoints}</TableCell>
+                              </TableRow>
+                              <TableRow key={`${player.name}-timestamp`}>
+                                <TableCell>Time</TableCell>
                                 <TableCell>{player.timestamp}</TableCell>
                               </TableRow>
                             </TableBody>
