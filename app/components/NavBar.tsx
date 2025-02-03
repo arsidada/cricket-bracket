@@ -39,6 +39,11 @@ const NavBar: React.FC = () => {
             <ListItemText primary="Leaderboard" />
           </ListItem>
         </Link>
+        <Link href="/rules" passHref>
+          <ListItem button component="a">
+            <ListItemText primary="Rules" />
+          </ListItem>
+        </Link>
       </List>
     </Box>
   );
@@ -48,7 +53,7 @@ const NavBar: React.FC = () => {
       <AppBar position="fixed" sx={{ backgroundColor: 'black' }}>
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center' }}>
-            T20 World Cup Bracket Challenge
+            CT 2025 Bracket Challenge
           </Typography>
           <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)}>
             <MenuIcon />

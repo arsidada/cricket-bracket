@@ -36,8 +36,8 @@ This is a Next.js application that displays a leaderboard and fixtures for a cri
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/cricket-bracket-leaderboard.git
-cd cricket-bracket-leaderboard
+git clone https://github.com/yourusername/cricket-bracket.git
+cd cricket-bracket
 ```
 
 2. Install dependencies:

@@ -28,10 +28,10 @@ const HomePage = () => {
   return (
     <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100vh">
       <Typography variant="h4" align="center" gutterBottom>
-        Welcome to the T20 World Cup Bracket Challenge
+        Welcome to the Champions Trophy 2025 Bracket Challenge
       </Typography>
       <Typography variant="h6" align="center" gutterBottom>
-        Use the menu to navigate to the Fixture Picks or Leaderboard.
+        Use the menu to navigate to the Rules, Fixture Picks or Leaderboard.
       </Typography>
       <Button variant="contained" color="secondary" onClick={() => signOut()}>
         Sign Out
