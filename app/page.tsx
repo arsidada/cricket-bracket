@@ -31,7 +31,7 @@ const HomePage = () => {
         Welcome to the Champions Trophy 2025 Bracket Challenge
       </Typography>
       <Typography variant="h6" align="center" gutterBottom>
-        Use the menu to navigate to the Rules, Fixture Picks or Leaderboard.
+        Use the menu to navigate to the Rules, Your Bracket, Fixture Picks or Leaderboard.
       </Typography>
       <Button variant="contained" color="secondary" onClick={() => signOut()}>
         Sign Out

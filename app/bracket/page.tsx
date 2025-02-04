@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import {
   Container,
@@ -186,6 +186,19 @@ const BracketSubmission = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (!session) {
+    return (
+      <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100vh">
+        <Typography align="center" color="error" gutterBottom>
+          Please sign in to view the fixtures.
+        </Typography>
+        <Button variant="contained" color="primary" onClick={() => signIn()}>
+          Sign In
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="sm">
