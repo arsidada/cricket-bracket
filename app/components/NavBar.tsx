@@ -29,6 +29,11 @@ const NavBar: React.FC = () => {
             <ListItemText primary="Home" />
           </ListItem>
         </Link>
+        <Link href="/bracket" passHref>
+          <ListItem button component="a">
+            <ListItemText primary="Your Bracket" />
+          </ListItem>
+        </Link>
         <Link href="/fixtures" passHref>
           <ListItem button component="a">
             <ListItemText primary="Fixture Picks" />
@@ -44,6 +49,7 @@ const NavBar: React.FC = () => {
             <ListItemText primary="Rules" />
           </ListItem>
         </Link>
+
       </List>
     </Box>
   );

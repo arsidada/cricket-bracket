@@ -1,4 +1,3 @@
-// pages/api/sheets.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
 import { google } from 'googleapis';
@@ -33,35 +32,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: 'v4', auth });
 
-    const [groupStageResponse, super8Response, playoffsResponse, linksResponse, bonusesResponse] = await Promise.all([
-      sheets.spreadsheets.values.get({
-        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-        range: 'Predictions Overview!A1:Z1000',
-      }),
-      sheets.spreadsheets.values.get({
-        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-        range: 'Super8!A1:Z1000',
-      }),
-      sheets.spreadsheets.values.get({
-        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-        range: 'Playoffs!A1:Z1000',
-      }),
-      sheets.spreadsheets.values.get({
-        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-        range: 'Links!A1:C1000',
-      }),
-      sheets.spreadsheets.values.get({
-        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-        range: 'Bonuses Overview!A1:Z1000',
-      }),
+    // Helper function to fetch sheet data safely
+    const fetchSheetData = async (range: string) => {
+      try {
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+          range,
+        });
+        return response.data.values || [];
+      } catch (error: any) {
+        if (error.response?.status === 400) {
+          console.warn(`Sheet ${range} not found, skipping.`);
+          return []; // Return empty array instead of failing
+        }
+        throw error;
+      }
+    };
+
+    // Fetch sheets with error handling
+    const [groupStage, super8, playoffs, links, bonuses] = await Promise.all([
+      fetchSheetData('Predictions Overview!A1:Z1000'),
+      fetchSheetData('Super8!A1:Z1000'),
+      fetchSheetData('Playoffs!A1:Z1000'),
+      fetchSheetData('Links!A1:C1000'),
+      fetchSheetData('Bonuses Overview!A1:Z1000'),
     ]);
 
     return res.status(200).json({
-      groupStage: groupStageResponse.data.values,
-      super8: super8Response.data.values,
-      playoffs: playoffsResponse.data.values,
-      links: linksResponse.data.values,
-      bonuses: bonusesResponse.data.values,
+      groupStage,
+      super8,
+      playoffs,
+      links,
+      bonuses,
     });
   } catch (error) {
     console.error('Error fetching Google Sheets data:', error);

@@ -14,12 +14,14 @@
     "@mui/icons-material": "^5.15.20",
     "@mui/material": "^5.15.20",
     "googleapis": "latest",
+    "luxon": "^3.5.0",
     "next": "^14.2.4",
     "next-auth": "latest",
     "react": "latest",
     "react-dom": "latest"
   },
   "devDependencies": {
+    "@types/luxon": "^3.4.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
