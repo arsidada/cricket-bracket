@@ -79,9 +79,20 @@ GOOGLE_SHEET_ID: The ID of your Google Sheet.
 │       └── page.tsx
 │   └── fixtures
 │       └── page.tsx
+│   └── rules
+│       └── page.tsx
+│   └── bracket
+│       └── page.tsx
+│   └── layout.tsx
+│   └── metadata.ts
+│   └── page.tsx
 ├── pages
 │   └── api
 │       └── sheets.ts
+│       └── get-bracket.ts
+│       └── submit-bracket.ts
+│       └── auth
+│           └── [...nextauth].ts
 ├── public
 ├── styles
 ├── .env.local.example
