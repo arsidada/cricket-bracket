@@ -1,10 +1,35 @@
+// pages/api/submit-bracket.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../pages/api/auth/[...nextauth]'; 
+import { authOptions } from '../../pages/api/auth/[...nextauth]';
 import { google } from 'googleapis';
 import { DateTime } from 'luxon';
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+
+// Helper function to log an activity event
+const logActivity = async (
+  sheets: any,
+  spreadsheetId: string,
+  timestamp: string,
+  eventType: string,
+  user: string,
+  details: string = ''
+) => {
+  try {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: 'Activity Log!A:D',
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [[timestamp, eventType, user, details]],
+      },
+    });
+  } catch (error) {
+    console.error('Error logging activity:', error);
+    // Optionally, decide if you want to fail silently or propagate the error.
+  }
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -55,9 +80,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const headers = data[0];
     let userColumnIndex = headers.indexOf(name);
+    let eventType = '';
+    let eventDetails = '';
 
-    // Step 2: If user doesn't have a column, add one
+    // Step 2: If user doesn't have a column, add one (new submission)
     if (userColumnIndex === -1) {
+      eventType = 'BRACKET_SUBMITTED';
+      eventDetails = 'submitted their bracket';
       userColumnIndex = headers.length;
       headers.push(name);
 
@@ -68,6 +97,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         valueInputOption: 'RAW',
         requestBody: { values: [headers] },
       });
+    } else {
+      // If the user's column already exists, it's an update.
+      eventType = 'BRACKET_UPDATED';
+      eventDetails = 'updated their bracket';
     }
 
     // Step 3: Prepare data to update each row with their picks
@@ -155,6 +188,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       valueInputOption: 'RAW',
       requestBody: { values: bonusData },
     });
+
+    // --- NEW STEP: Log Activity ---
+    // Log the activity with the appropriate event type and details.
+    await logActivity(
+      sheets,
+      process.env.GOOGLE_SHEET_ID!,
+      timestampEST,
+      eventType,
+      name,
+      eventDetails
+    );
 
     return res.status(200).json({ message: 'Bracket submitted successfully' });
   } catch (error) {

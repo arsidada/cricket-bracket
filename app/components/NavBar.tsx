@@ -5,12 +5,16 @@ import React, { useState } from 'react';
 import { AppBar, Toolbar, IconButton, Typography, Drawer, List, ListItem, ListItemText, Box } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 
 const NavBar: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
-    if (event.type === 'keydown' && ((event as React.KeyboardEvent).key === 'Tab' || (event as React.KeyboardEvent).key === 'Shift')) {
+    if (
+      event.type === 'keydown' &&
+      ((event as React.KeyboardEvent).key === 'Tab' || (event as React.KeyboardEvent).key === 'Shift')
+    ) {
       return;
     }
     setDrawerOpen(open);
@@ -18,7 +22,13 @@ const NavBar: React.FC = () => {
 
   const list = () => (
     <Box
-      sx={{ width: 250 }}
+      sx={{
+        width: 250,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}
       role="presentation"
       onClick={toggleDrawer(false)}
       onKeyDown={toggleDrawer(false)}
@@ -49,8 +59,35 @@ const NavBar: React.FC = () => {
             <ListItemText primary="Rules" />
           </ListItem>
         </Link>
-
       </List>
+      <Box
+  sx={{
+    padding: 2,
+    borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+  }}
+>
+  <List>
+    <ListItem
+      button
+      onClick={() => signOut()}
+      sx={(theme) => ({
+        backgroundColor: theme.palette.error.light,
+        borderRadius: 1,
+        '&:hover': {
+          backgroundColor: theme.palette.error.main,
+        },
+      })}
+    >
+      <ListItemText
+        primary="Sign Out"
+        primaryTypographyProps={{
+          align: 'center',
+          sx: { fontWeight: 600, color: (theme) => theme.palette.error.contrastText },
+        }}
+      />
+    </ListItem>
+  </List>
+</Box>
     </Box>
   );
 
