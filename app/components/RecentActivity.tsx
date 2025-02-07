@@ -10,8 +10,10 @@ import {
   ListItemText,
   Paper,
   Divider,
-  useTheme
+  useTheme,
+  Skeleton
 } from '@mui/material';
+import { DateTime } from 'luxon';
 
 interface Activity {
   timestamp: string;
@@ -30,6 +32,7 @@ const eventTypeMap: { [key: string]: string } = {
 const RecentActivity = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const theme = useTheme();
 
   useEffect(() => {
@@ -45,6 +48,8 @@ const RecentActivity = () => {
         }
       } catch (err: any) {
         setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -75,7 +80,54 @@ const RecentActivity = () => {
       <Typography variant="h5" gutterBottom>
         Recent Activity
       </Typography>
-      {activities.length === 0 ? (
+      {loading ? (
+        // Show three skeleton "cards"
+        <Box
+          sx={{
+            maxHeight: 450,
+            overflowY: 'auto',
+            pr: 1,
+          }}
+        >
+          <List>
+            {[1, 2, 3].map((skeletonIndex) => (
+              <Paper
+                key={skeletonIndex}
+                sx={{
+                  marginBottom: 2,
+                  padding: 2,
+                  borderRadius: 2,
+                  backgroundColor: theme.palette.background.default,
+                }}
+                elevation={2}
+              >
+                <ListItem alignItems="flex-start" disableGutters>
+                  <ListItemText
+                    primary={
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        mb={1}
+                      >
+                        <Skeleton variant="text" width="60%" height={30} />
+                        <Skeleton variant="text" width="30%" height={20} />
+                      </Box>
+                    }
+                    secondary={
+                      <React.Fragment>
+                        <Skeleton variant="text" width="40%" height={20} />
+                        <Skeleton variant="text" width="80%" height={20} />
+                      </React.Fragment>
+                    }
+                  />
+                </ListItem>
+                <Divider variant="inset" component="li" />
+              </Paper>
+            ))}
+          </List>
+        </Box>
+      ) : activities.length === 0 ? (
         <Typography variant="body1">No recent activity found.</Typography>
       ) : (
         <Box
@@ -90,6 +142,8 @@ const RecentActivity = () => {
               // Translate the event type using our map; if not found, fallback to the original.
               const friendlyEvent =
                 eventTypeMap[activity.eventType] || activity.eventType;
+              // Format timestamp using Luxon (assumes timestamp is in a format recognized by JavaScript Date)
+              const formattedTime = DateTime.fromJSDate(new Date(activity.timestamp)).toFormat('MMM dd HH:mm');
 
               return (
                 <Paper
@@ -115,7 +169,7 @@ const RecentActivity = () => {
                             {friendlyEvent}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {new Date(activity.timestamp).toLocaleString()}
+                            {formattedTime}
                           </Typography>
                         </Box>
                       }
