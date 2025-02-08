@@ -2,10 +2,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AppBar, Toolbar, IconButton, Typography, Drawer, List, ListItem, ListItemText, Box } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
+import DeadlineCountdown from './DeadlineCountdown';
 
 const NavBar: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -61,33 +72,33 @@ const NavBar: React.FC = () => {
         </Link>
       </List>
       <Box
-  sx={{
-    padding: 2,
-    borderTop: (theme) => `1px solid ${theme.palette.divider}`,
-  }}
->
-  <List>
-    <ListItem
-      button
-      onClick={() => signOut()}
-      sx={(theme) => ({
-        backgroundColor: theme.palette.error.light,
-        borderRadius: 1,
-        '&:hover': {
-          backgroundColor: theme.palette.error.main,
-        },
-      })}
-    >
-      <ListItemText
-        primary="Sign Out"
-        primaryTypographyProps={{
-          align: 'center',
-          sx: { fontWeight: 600, color: (theme) => theme.palette.error.contrastText },
+        sx={{
+          padding: 2,
+          borderTop: (theme) => `1px solid ${theme.palette.divider}`,
         }}
-      />
-    </ListItem>
-  </List>
-</Box>
+      >
+        <List>
+          <ListItem
+            button
+            onClick={() => signOut()}
+            sx={(theme) => ({
+              backgroundColor: theme.palette.error.light,
+              borderRadius: 1,
+              '&:hover': {
+                backgroundColor: theme.palette.error.main,
+              },
+            })}
+          >
+            <ListItemText
+              primary="Sign Out"
+              primaryTypographyProps={{
+                align: 'center',
+                sx: { fontWeight: 600, color: (theme) => theme.palette.error.contrastText },
+              }}
+            />
+          </ListItem>
+        </List>
+      </Box>
     </Box>
   );
 
@@ -102,6 +113,8 @@ const NavBar: React.FC = () => {
             <MenuIcon />
           </IconButton>
         </Toolbar>
+        {/* Insert the countdown banner below the toolbar */}
+        <DeadlineCountdown />
       </AppBar>
       <Drawer anchor="right" open={drawerOpen} onClose={toggleDrawer(false)}>
         {list()}
