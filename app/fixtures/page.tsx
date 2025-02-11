@@ -1,7 +1,8 @@
+// app/fixtures/page.tsx
 'use client';
 
 import { useSession, signIn } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ChangeEvent } from 'react';
 import {
   Container,
   Typography,
@@ -11,7 +12,13 @@ import {
   AccordionSummary,
   AccordionDetails,
   IconButton,
-  CircularProgress
+  CircularProgress,
+  TextField,
+  Snackbar,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
+  Alert as MuiAlert,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { styled } from '@mui/system';
@@ -23,6 +30,8 @@ interface Fixture {
   team2: string;
   winner: string;
   picks: { [key: string]: string };
+  // Optionally, you could include an ID or row index here if needed.
+  rowIndex?: number;
 }
 
 const WinnerTypography = styled(Typography)({
@@ -36,6 +45,11 @@ const Fixtures = () => {
   const [super8Fixtures, setSuper8Fixtures] = useState<Fixture[]>([]);
   const [playoffFixtures, setPlayoffFixtures] = useState<Fixture[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,7 +62,6 @@ const Fixtures = () => {
           let super8Data: Fixture[] = [];
           let playoffData: Fixture[] = [];
 
-          // Only transform if data exists
           if (result.super8 && !result.super8.errors) {
             super8Data = transformData(result.super8);
           }
@@ -82,7 +95,9 @@ const Fixtures = () => {
         <Box display="flex" justifyContent="center" mt={4}>
           <CircularProgress />
         </Box>
-        <Typography align="center" color="primary">Loading...</Typography>
+        <Typography align="center" color="primary">
+          Loading...
+        </Typography>
       </Container>
     );
   }
@@ -103,7 +118,9 @@ const Fixtures = () => {
   if (error) {
     return (
       <Container>
-        <Typography align="center" color="error">Error: {error}</Typography>
+        <Typography align="center" color="error">
+          Error: {error}
+        </Typography>
       </Container>
     );
   }
@@ -111,10 +128,72 @@ const Fixtures = () => {
   if (groupStageFixtures.length === 0 && super8Fixtures.length === 0 && playoffFixtures.length === 0) {
     return (
       <Container>
-        <Typography align="center" color="primary">Loading...</Typography>
+        <Typography align="center" color="primary">
+          Loading...
+        </Typography>
       </Container>
     );
   }
+
+  const AdminFixtureUpdate = ({ fixture }: { fixture: Fixture }) => {
+    const [newWinner, setNewWinner] = useState<string>(fixture.winner);
+    const [updating, setUpdating] = useState<boolean>(false);
+  
+    const handleChange = (event: SelectChangeEvent<string>) => {
+      setNewWinner(event.target.value);
+    };
+  
+    const handleUpdate = async () => {
+      // Validate that newWinner is one of the two teams.
+      if (newWinner !== fixture.team1 && newWinner !== fixture.team2) {
+        setSnackbar({ open: true, message: 'Please select a valid team', severity: 'error' });
+        return;
+      }
+      setUpdating(true);
+      try {
+        const response = await fetch('/api/update-fixture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: fixture.date,
+            match: fixture.match,
+            newWinner,
+          }),
+        });
+        const result = await response.json();
+        if (response.ok) {
+          setSnackbar({ open: true, message: 'Fixture updated successfully!', severity: 'success' });
+          // Optionally refresh fixtures data here or update the local state.
+        } else {
+          setSnackbar({ open: true, message: result.error || 'Update failed', severity: 'error' });
+        }
+      } catch (err) {
+        setSnackbar({ open: true, message: 'An error occurred while updating', severity: 'error' });
+      } finally {
+        setUpdating(false);
+      }
+    };
+  
+    return (
+      <Box sx={{ mt: 2, p: 1, borderTop: '1px solid #ccc' }}>
+        <Typography variant="subtitle2">Admin: Update Fixture Result</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+          <Select
+            value={newWinner}
+            onChange={handleChange}
+            size="small"
+            sx={{ minWidth: 120 }}
+          >
+            <MenuItem value={fixture.team1}>{fixture.team1}</MenuItem>
+            <MenuItem value={fixture.team2}>{fixture.team2}</MenuItem>
+          </Select>
+          <Button variant="contained" color="primary" onClick={handleUpdate} disabled={updating}>
+            {updating ? 'Updating...' : 'Update Fixture'}
+          </Button>
+        </Box>
+      </Box>
+    );
+  };
 
   // Helper: Render a single fixture in an Accordion
   const renderFixtureAccordion = (fixture: Fixture, index: number) => {
@@ -161,6 +240,8 @@ const Fixtures = () => {
                   </Typography>
                 ))}
             </Box>
+            {/* If user is admin, show the update fixture component */}
+            {session.user?.email === 'arsalan.rana@gmail.com' && <AdminFixtureUpdate fixture={fixture} />}
           </Box>
         </AccordionDetails>
       </Accordion>
@@ -199,12 +280,24 @@ const Fixtures = () => {
           {groupStageFixtures.map((fixture, index) => renderFixtureAccordion(fixture, index))}
         </Box>
       )}
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <MuiAlert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
     </Container>
   );
 };
 
 export default Fixtures;
 
+// Helper function to transform sheet data into Fixture objects.
+// Optionally, you can also add a row index or unique ID to each fixture.
 const transformData = (data: any[][] | undefined): Fixture[] => {
   if (!data || data.length === 0) {
     return [];
@@ -228,7 +321,7 @@ const transformData = (data: any[][] | undefined): Fixture[] => {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[dateIndex] === 'Date' && row[matchIndex] === 'Match') {
-      continue; // Skip any duplicate header rows
+      continue; // Skip duplicate header rows
     }
     const winner = row[winnerIndex];
 
@@ -243,6 +336,7 @@ const transformData = (data: any[][] | undefined): Fixture[] => {
       team2: row[team2Index],
       winner: row[winnerIndex],
       picks: {},
+      rowIndex: i, // Optionally keep track of the row index
     };
 
     for (let j = 0; j < header.length; j++) {

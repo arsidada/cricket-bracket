@@ -25,7 +25,8 @@ interface Activity {
 // Map internal event types to user-friendly messages and emojis.
 const eventTypeMap: { [key: string]: string } = {
   BRACKET_SUBMITTED: 'Bracket Submitted 🎉',
-  BRACKET_UPDATED: 'Bracket Updated 🔄'
+  BRACKET_UPDATED: 'Bracket Updated 🔄',
+  FIXTURE_UPDATED: 'Fixture Updated 🏆'
   // Add additional mappings as needed.
 };
 
