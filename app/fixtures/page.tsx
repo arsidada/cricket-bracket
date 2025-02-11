@@ -11,9 +11,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  IconButton,
   CircularProgress,
-  TextField,
   Snackbar,
   Select,
   MenuItem,
@@ -22,6 +20,14 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { styled } from '@mui/system';
+import React from 'react';
+
+// Define a type for the snackbar state.
+type SnackbarState = {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error';
+};
 
 interface Fixture {
   date: string;
@@ -30,7 +36,6 @@ interface Fixture {
   team2: string;
   winner: string;
   picks: { [key: string]: string };
-  // Optionally, you could include an ID or row index here if needed.
   rowIndex?: number;
 }
 
@@ -38,6 +43,11 @@ const WinnerTypography = styled(Typography)({
   color: 'green',
   fontWeight: 'bold',
 });
+
+const MuiAlertComponent = React.forwardRef<HTMLDivElement, any>((props, ref) => (
+  <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
+));
+MuiAlertComponent.displayName = 'MuiAlertComponent';
 
 const Fixtures = () => {
   const { data: session, status } = useSession();
@@ -135,7 +145,15 @@ const Fixtures = () => {
     );
   }
 
-  const AdminFixtureUpdate = ({ fixture }: { fixture: Fixture }) => {
+  // Admin update component now receives setSnackbar as a prop.
+
+  const AdminFixtureUpdate = ({
+    fixture,
+    setSnackbar,
+  }: {
+    fixture: Fixture;
+    setSnackbar: React.Dispatch<React.SetStateAction<SnackbarState>>;
+  }) => {
     const [newWinner, setNewWinner] = useState<string>(fixture.winner);
     const [updating, setUpdating] = useState<boolean>(false);
   
@@ -151,6 +169,7 @@ const Fixtures = () => {
       }
       setUpdating(true);
       try {
+        // First, update the fixture result.
         const response = await fetch('/api/update-fixture', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -162,10 +181,19 @@ const Fixtures = () => {
         });
         const result = await response.json();
         if (response.ok) {
-          setSnackbar({ open: true, message: 'Fixture updated successfully!', severity: 'success' });
-          // Optionally refresh fixtures data here or update the local state.
+          // On successful fixture update, trigger leaderboard refresh.
+          const lbResponse = await fetch('/api/refresh-leaderboard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const lbResult = await lbResponse.json();
+          if (lbResponse.ok) {
+            setSnackbar({ open: true, message: 'Fixture and leaderboard updated successfully!', severity: 'success' });
+          } else {
+            setSnackbar({ open: true, message: lbResult.error || 'Fixture updated but leaderboard refresh failed', severity: 'error' });
+          }
         } else {
-          setSnackbar({ open: true, message: result.error || 'Update failed', severity: 'error' });
+          setSnackbar({ open: true, message: result.error || 'Fixture update failed', severity: 'error' });
         }
       } catch (err) {
         setSnackbar({ open: true, message: 'An error occurred while updating', severity: 'error' });
@@ -195,7 +223,7 @@ const Fixtures = () => {
     );
   };
 
-  // Helper: Render a single fixture in an Accordion
+  // Helper: Render a single fixture in an Accordion.
   const renderFixtureAccordion = (fixture: Fixture, index: number) => {
     return (
       <Accordion key={index} sx={{ mb: 2 }}>
@@ -240,8 +268,10 @@ const Fixtures = () => {
                   </Typography>
                 ))}
             </Box>
-            {/* If user is admin, show the update fixture component */}
-            {session.user?.email === 'arsalan.rana@gmail.com' && <AdminFixtureUpdate fixture={fixture} />}
+            {/* Only show the admin update component if the signed-in user is the admin */}
+            {session.user?.email === 'arsalan.rana@gmail.com' && (
+              <AdminFixtureUpdate fixture={fixture} setSnackbar={setSnackbar} />
+            )}
           </Box>
         </AccordionDetails>
       </Accordion>
@@ -284,11 +314,24 @@ const Fixtures = () => {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        onClose={(event, reason) => {
+          if (reason !== 'clickaway') {
+            setSnackbar({ ...snackbar, open: false });
+          }
+        }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <MuiAlert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </MuiAlert>
+      <MuiAlertComponent
+        onClose={(event: React.SyntheticEvent<any, Event>, reason?: string) => {
+          if (reason !== 'clickaway') {
+            setSnackbar({ ...snackbar, open: false });
+          }
+        }}
+        severity={snackbar.severity}
+        sx={{ width: '100%' }}
+      >
+        {snackbar.message}
+      </MuiAlertComponent>
       </Snackbar>
     </Container>
   );
@@ -297,7 +340,6 @@ const Fixtures = () => {
 export default Fixtures;
 
 // Helper function to transform sheet data into Fixture objects.
-// Optionally, you can also add a row index or unique ID to each fixture.
 const transformData = (data: any[][] | undefined): Fixture[] => {
   if (!data || data.length === 0) {
     return [];
