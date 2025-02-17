@@ -66,6 +66,22 @@ const bonusQuestions = [
   "Player of the Tournament"
 ];
 
+const bonusPredictions: { [key: string]: string } = {
+  "Tournament’s Top Scorer": "Shubman Gill (India)",
+  "Tournament’s Top Wicket-taker": "Adam Zampa (Australia)",
+  "Team with the Highest Single Match Score": "India",
+  "Team with the Lowest Single Match Score": "Afghanistan",
+  "Most Sixes by a Player": "Heinrich Klaasen (South Africa)",
+  "Most Centuries by a Player": "Virat Kohli (India)",
+  "Player with the Most Catches": "Jos Buttler (England)",
+  "Player with the Most Player-of-the-Match Awards": "Shreyas Iyer (India)",
+  "Best Bowling Economy (12.5 overs minimum)": "Keshav Maharaj (South Africa)",
+  "Highest Individual Score": "Fakhar Zaman (Pakistan)",
+  "Fastest Fifty": "Glenn Maxwell (Australia)",
+  "Fastest Century": "Ben Duckett (England)",
+  "Player of the Tournament": "Shubman Gill (India)"
+};
+
 // TabPanel component (from MUI docs)
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -354,6 +370,10 @@ const BracketSubmission = () => {
                 }
                 disabled={locked}
               />
+              {/* Display the AI prediction in a nice, subtle way */}
+              <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 0.5 }}>
+                AI Prediction: {bonusPredictions[question]}
+              </Typography>
             </Box>
           ))}
         </Box>
