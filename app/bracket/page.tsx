@@ -59,7 +59,7 @@ const bonusQuestions = [
   "Most Centuries by a Player",
   "Player with the Most Catches",
   "Player with the Most Player-of-the-Match Awards",
-  "Best Bowling Economy",
+  "Best Bowling Economy (12.5 overs minimum)",
   "Highest Individual Score",
   "Fastest Fifty",
   "Fastest Century",
@@ -135,20 +135,27 @@ const BracketSubmission = () => {
     const fetchExistingPicks = async () => {
       if (!session?.user?.name) return;
       setIsLoading(true);
-      const response = await fetch(`/api/get-bracket?name=${encodeURIComponent(session.user.name)}`);
-      const data = await response.json();
-      if (response.ok) {
-        // If data.picks exists and is non-empty, then the user already submitted.
-        if (data.picks && Object.keys(data.picks).length > 0) {
-          setAlreadySubmitted(true);
-          setPredictions(data.picks);
-          setBonusAnswers(data.bonusPicks || {});
+      try {
+        const response = await fetch(`/api/get-bracket?name=${encodeURIComponent(session.user.name)}`);
+        const data = await response.json();
+        if (response.ok) {
+          // Only update if the user hasn't already started working on picks
+          if (Object.keys(predictions).length === 0 && data.picks && Object.keys(data.picks).length > 0) {
+            setAlreadySubmitted(true);
+            setPredictions(data.picks);
+            setBonusAnswers(data.bonusPicks || {});
+          }
         }
+      } catch (error) {
+        console.error("Error fetching bracket:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
-
+  
     fetchExistingPicks();
+    // We intentionally leave out `predictions` from the dependency array so that this
+    // effect runs only when the session changes.
   }, [session]);
 
   const handleSelection = (match: number, team: string) => {
