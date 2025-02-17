@@ -1,4 +1,4 @@
-// components/RecentActivity.tsx
+// app/components/RecentActivity.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';

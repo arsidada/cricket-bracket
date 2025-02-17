@@ -9,7 +9,6 @@ import {
   Box,
   Paper,
   Collapse,
-  IconButton,
   Skeleton,
   CircularProgress,
   Fab,
@@ -17,7 +16,12 @@ import {
   Tabs,
   Tab,
   Snackbar,
-  Alert
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material';
 import { ExpandMore, ExpandLess } from '@mui/icons-material';
 import SendIcon from '@mui/icons-material/Send';
@@ -94,9 +98,16 @@ const BracketSubmission = () => {
   const [tabValue, setTabValue] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // State for picks that the user is currently working on
   const [predictions, setPredictions] = useState<{ [match: number]: string }>({});
   const [detailsOpen, setDetailsOpen] = useState<{ [match: number]: boolean }>({});
   const [bonusAnswers, setBonusAnswers] = useState<{ [key: string]: string }>({});
+  
+  // NEW: A flag that indicates whether the user has already submitted (finalized) their bracket.
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  
+  // State for showing the deadline popup
+  const [showDeadlinePopup, setShowDeadlinePopup] = useState(false);
 
   // Snackbar state for notifications
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
@@ -113,6 +124,13 @@ const BracketSubmission = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
+  // Define the deadline: 3:59 AM Feb 19, 2025 (adjust timezone if necessary)
+  const deadline = new Date("2025-02-19T03:59:00");
+  const now = new Date();
+  const isPastDeadline = now > deadline;
+  // The bracket is locked only if it's past deadline and the user has already finalized a submission.
+  const locked = isPastDeadline && alreadySubmitted;
+
   useEffect(() => {
     const fetchExistingPicks = async () => {
       if (!session?.user?.name) return;
@@ -120,8 +138,12 @@ const BracketSubmission = () => {
       const response = await fetch(`/api/get-bracket?name=${encodeURIComponent(session.user.name)}`);
       const data = await response.json();
       if (response.ok) {
-        setPredictions(data.picks || {});
-        setBonusAnswers(data.bonusPicks || {});
+        // If data.picks exists and is non-empty, then the user already submitted.
+        if (data.picks && Object.keys(data.picks).length > 0) {
+          setAlreadySubmitted(true);
+          setPredictions(data.picks);
+          setBonusAnswers(data.bonusPicks || {});
+        }
       }
       setIsLoading(false);
     };
@@ -130,6 +152,8 @@ const BracketSubmission = () => {
   }, [session]);
 
   const handleSelection = (match: number, team: string) => {
+    // Do not allow changing the pick if submission is locked.
+    if (locked) return;
     setPredictions((prev) => ({
       ...prev,
       [match]: team,
@@ -147,22 +171,9 @@ const BracketSubmission = () => {
     setTabValue(newValue);
   };
 
-  const handleSubmit = async () => {
-    // Check that fixture picks are complete
-    if (Object.keys(predictions).length !== fixtures.length) {
-      showSnackbar("Please predict the winner for all matches before submitting.", "error");
-      return;
-    }
-    // Check that all bonus questions are answered
-    for (const question of bonusQuestions) {
-      if (!bonusAnswers[question] || bonusAnswers[question].trim() === "") {
-        showSnackbar(`Please answer the bonus question: "${question}"`, "error");
-        return;
-      }
-    }
-
+  // Function that handles the actual submission API call.
+  const doSubmit = async () => {
     setIsSubmitting(true);
-
     try {
       const response = await fetch('/api/submit-bracket', {
         method: 'POST',
@@ -177,6 +188,8 @@ const BracketSubmission = () => {
 
       if (response.ok) {
         showSnackbar("Your bracket has been submitted successfully!", "success");
+        // Mark that the user has now finalized their submission.
+        setAlreadySubmitted(true);
       } else {
         showSnackbar("Failed to submit your bracket. Please try again.", "error");
       }
@@ -185,6 +198,46 @@ const BracketSubmission = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = () => {
+    // First, check that fixture picks and bonus answers are complete.
+    if (Object.keys(predictions).length !== fixtures.length) {
+      showSnackbar("Please predict the winner for all matches before submitting.", "error");
+      return;
+    }
+    for (const question of bonusQuestions) {
+      if (!bonusAnswers[question] || bonusAnswers[question].trim() === "") {
+        showSnackbar(`Please answer the bonus question: "${question}"`, "error");
+        return;
+      }
+    }
+
+    if (isPastDeadline) {
+      if (alreadySubmitted) {
+        // Already submitted and now locked—do not allow changes.
+        showSnackbar("Bracket submission is locked. You cannot modify your submission.", "error");
+        return;
+      } else {
+        // User has not finalized a submission even though it's past the deadline.
+        // Show the popup warning about the penalty.
+        setShowDeadlinePopup(true);
+        return;
+      }
+    }
+
+    // If not past deadline, proceed normally.
+    doSubmit();
+  };
+
+  // Handlers for the deadline popup dialog.
+  const handlePopupContinue = () => {
+    setShowDeadlinePopup(false);
+    doSubmit();
+  };
+
+  const handlePopupCancel = () => {
+    setShowDeadlinePopup(false);
   };
 
   if (!session) {
@@ -209,6 +262,11 @@ const BracketSubmission = () => {
         <Typography variant="body1" color="textSecondary">
           Make your selections in the tabs below and then submit your bracket.
         </Typography>
+        {locked && (
+          <Typography variant="body2" color="error">
+            Bracket submission is locked as you already submitted your bracket and the deadline has passed.
+          </Typography>
+        )}
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -230,6 +288,7 @@ const BracketSubmission = () => {
                 <Button
                   variant={predictions[fixture.match] === fixture.team1 ? "contained" : "outlined"}
                   onClick={() => handleSelection(fixture.match, fixture.team1)}
+                  disabled={locked}
                 >
                   {fixture.team1}
                 </Button>
@@ -240,6 +299,7 @@ const BracketSubmission = () => {
                 <Button
                   variant={predictions[fixture.match] === fixture.team2 ? "contained" : "outlined"}
                   onClick={() => handleSelection(fixture.match, fixture.team2)}
+                  disabled={locked}
                 >
                   {fixture.team2}
                 </Button>
@@ -285,6 +345,7 @@ const BracketSubmission = () => {
                     [question]: e.target.value,
                   }))
                 }
+                disabled={locked}
               />
             </Box>
           ))}
@@ -295,7 +356,7 @@ const BracketSubmission = () => {
         variant="extended"
         color="primary"
         onClick={handleSubmit}
-        disabled={isSubmitting}
+        disabled={isSubmitting || locked}
         sx={{
           position: 'fixed',
           bottom: 16,
@@ -321,6 +382,27 @@ const BracketSubmission = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Deadline Popup Dialog */}
+      <Dialog
+        open={showDeadlinePopup}
+        onClose={handlePopupCancel}
+      >
+        <DialogTitle>Submission Deadline Passed</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            The deadline for the bracket submission has passed. Remember that your submission will incur a penalty.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handlePopupCancel} variant="contained" color="error">
+            Cancel
+          </Button>
+          <Button onClick={handlePopupContinue} variant="contained" color="success">
+            Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
