@@ -21,10 +21,18 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { ExpandMore, ExpandLess } from '@mui/icons-material';
+import LooksTwoIcon from '@mui/icons-material/LooksTwo';
+import ShuffleIcon from '@mui/icons-material/Shuffle';
 import SendIcon from '@mui/icons-material/Send';
+import { DateTime } from 'luxon';
 
 interface Fixture {
   date: string;
@@ -109,6 +117,17 @@ function a11yProps(index: number) {
   };
 }
 
+// Helper to get fixture start time (assuming fixtures start at 04:00 on the given date in 2025)
+// Using Luxon with an explicit time zone
+const getFixtureStartTime = (fixture: Fixture) => {
+  const dt = DateTime.fromFormat(
+    `${fixture.date} 2025 04:00`, 
+    'd MMMM yyyy HH:mm',
+    { zone: 'America/New_York' }  // Explicitly set Eastern Time
+  );
+  return dt.toJSDate();
+};
+
 const BracketSubmission = () => {
   const { data: session } = useSession();
   const [tabValue, setTabValue] = useState(0);
@@ -118,18 +137,30 @@ const BracketSubmission = () => {
   const [predictions, setPredictions] = useState<{ [match: number]: string }>({});
   const [detailsOpen, setDetailsOpen] = useState<{ [match: number]: boolean }>({});
   const [bonusAnswers, setBonusAnswers] = useState<{ [key: string]: string }>({});
-  
+
   // NEW: A flag that indicates whether the user has already submitted (finalized) their bracket.
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
-  
   // State for showing the deadline popup
   const [showDeadlinePopup, setShowDeadlinePopup] = useState(false);
-
   // Snackbar state for notifications
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
     open: false,
     message: '',
     severity: 'success'
+  });
+
+  // --- CHIP STATES ---
+  // Which chip menu (if any) is currently expanded ("doubleUp" or "wildcard")
+  const [selectedChipMenu, setSelectedChipMenu] = useState<"doubleUp" | "wildcard" | null>(null);
+  // The selected fixture for each chip (fixture number)
+  const [selectedDoubleUp, setSelectedDoubleUp] = useState<number | null>(null);
+  const [selectedWildcard, setSelectedWildcard] = useState<number | null>(null);
+  // Dialog state for confirming chip activation
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  // Store user's already activated chips fetched from backend
+  const [userChips, setUserChips] = useState<{ doubleUp: number | null; wildcard: number | null }>({
+    doubleUp: null,
+    wildcard: null
   });
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
@@ -140,13 +171,14 @@ const BracketSubmission = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
-  // Define the deadline: 3:59 AM Feb 19, 2025 (adjust timezone if necessary)
+  // Define the bracket submission deadline: 3:59 AM Feb 19, 2025 (adjust timezone if necessary)
   const deadline = new Date("2025-02-19T03:59:00");
   const now = new Date();
   const isPastDeadline = now > deadline;
   // The bracket is locked only if it's past deadline and the user has already finalized a submission.
   const locked = isPastDeadline && alreadySubmitted;
 
+  // Fetch bracket data on mount
   useEffect(() => {
     const fetchExistingPicks = async () => {
       if (!session?.user?.name) return;
@@ -168,11 +200,36 @@ const BracketSubmission = () => {
         setIsLoading(false);
       }
     };
-  
+
     fetchExistingPicks();
     // We intentionally leave out `predictions` from the dependency array so that this
     // effect runs only when the session changes.
   }, [session]);
+
+  // Fetch user's chip usage from the backend (using our get-user-chips endpoint)
+  useEffect(() => {
+    const fetchUserChips = async () => {
+      if (!session?.user?.name) return;
+      try {
+        const response = await fetch('/api/get-user-chips');
+        if (response.ok) {
+          const data = await response.json();
+          setUserChips({
+            doubleUp: data.doubleUp,
+            wildcard: data.wildcard
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user chips:", error);
+      }
+    };
+
+    fetchUserChips();
+  }, [session]);
+
+  // Get the current time in Eastern Time using Luxon
+  const nowEastern = DateTime.now().setZone('America/New_York').toJSDate();
+  const availableFixtures = fixtures.filter(fixture => getFixtureStartTime(fixture) > nowEastern);
 
   const handleSelection = (match: number, team: string) => {
     // Do not allow changing the pick if submission is locked.
@@ -194,7 +251,7 @@ const BracketSubmission = () => {
     setTabValue(newValue);
   };
 
-  // Function that handles the actual submission API call.
+  // Function that handles the actual submission API call for bracket picks.
   const doSubmit = async () => {
     setIsSubmitting(true);
     try {
@@ -263,6 +320,123 @@ const BracketSubmission = () => {
     setShowDeadlinePopup(false);
   };
 
+  // --- CHIP UI HANDLERS ---
+  const handleChipMenuToggle = (chip: "doubleUp" | "wildcard") => {
+    if (selectedChipMenu === chip) {
+      setSelectedChipMenu(null);
+    } else {
+      setSelectedChipMenu(chip);
+    }
+  };
+
+  // Called when the user clicks the "Apply Chip" button.
+  const handleApplyChip = () => {
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
+    setConfirmDialogOpen(false);
+  };
+
+  const handleConfirmChip = async () => {
+    setConfirmDialogOpen(false);
+  
+    if (selectedChipMenu === "wildcard" && selectedWildcard) {
+      // Find the fixture details for the selected wildcard fixture.
+      const fixture = fixtures.find(f => f.match === selectedWildcard);
+      if (!fixture) {
+        showSnackbar("Invalid fixture selection.", "error");
+        return;
+      }
+      
+      // Determine the current pick and swap it.
+      const currentPick = predictions[fixture.match];
+      let newPick: string;
+      if (currentPick === fixture.team1) {
+        newPick = fixture.team2;
+      } else if (currentPick === fixture.team2) {
+        newPick = fixture.team1;
+      } else {
+        // If no pick exists yet, you could choose a default or prompt the user.
+        newPick = fixture.team2;
+      }
+      
+      // Update the picks object.
+      const updatedPicks = { ...predictions, [fixture.match]: newPick };
+      setPredictions(updatedPicks);
+      
+      try {
+        // Submit the updated bracket with the wildcard flag.
+        const bracketResponse = await fetch('/api/submit-bracket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: session?.user?.name,
+            picks: updatedPicks,
+            bonusAnswers: bonusAnswers,
+            isWildcard: true, // This flag tells the API not to log this activity.
+          }),
+        });
+        
+        if (!bracketResponse.ok) {
+          showSnackbar("Failed to update your bracket with the wildcard change.", "error");
+          return;
+        }
+        
+        // Record the wildcard chip usage.
+        const chipResponse = await fetch('/api/submit-chips', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: session?.user?.name,
+            chips: { wildcard: fixture.match },
+          }),
+        });
+        
+        if (!chipResponse.ok) {
+          showSnackbar("Bracket updated, but failed to record wildcard usage.", "error");
+          return;
+        }
+        
+        showSnackbar("Wildcard applied! Your prediction has been swapped.", "success");
+        
+        // Update local chip state.
+        setUserChips((prev) => ({ ...prev, wildcard: fixture.match }));
+        // Clear wildcard selection.
+        setSelectedChipMenu(null);
+        setSelectedWildcard(null);
+      } catch (error) {
+        showSnackbar("An error occurred while applying the wildcard. Please try again.", "error");
+      }
+    } else if (selectedChipMenu === "doubleUp" && selectedDoubleUp) {
+      // Handle the double up chip in the usual way.
+      let chipData: any = { doubleUp: selectedDoubleUp };
+      try {
+        const response = await fetch('/api/submit-chips', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: session?.user?.name,
+            chips: chipData,
+          }),
+        });
+        if (response.ok) {
+          showSnackbar("Chip activated successfully!", "success");
+          setUserChips((prev) => ({ ...prev, doubleUp: chipData.doubleUp }));
+          setSelectedChipMenu(null);
+          setSelectedDoubleUp(null);
+        } else {
+          showSnackbar("Failed to activate chip. Please try again.", "error");
+        }
+      } catch (error) {
+        showSnackbar("An error occurred while activating chip. Please try again.", "error");
+      }
+    }
+  };
+
   if (!session) {
     return (
       <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100vh">
@@ -276,11 +450,19 @@ const BracketSubmission = () => {
     );
   }
 
+  // Determine the selected fixture details for the active chip menu.
+  let chipFixture: Fixture | undefined;
+  if (selectedChipMenu === "doubleUp" && selectedDoubleUp) {
+    chipFixture = fixtures.find(f => f.match === selectedDoubleUp);
+  } else if (selectedChipMenu === "wildcard" && selectedWildcard) {
+    chipFixture = fixtures.find(f => f.match === selectedWildcard);
+  }
+
   return (
     <Container maxWidth="sm">
       <Box my={4} textAlign="center">
         <Typography variant="h4" gutterBottom>
-          Submit Your Bracket
+          Your Bracket
         </Typography>
         <Typography variant="body1" color="textSecondary">
           Make your selections in the tabs below and then submit your bracket.
@@ -292,6 +474,113 @@ const BracketSubmission = () => {
         )}
       </Box>
 
+      {/* --- CHIP ACTIVATION UI --- */}
+      <Box my={4}>
+        <Typography variant="h5" gutterBottom>
+          Activate a Chip
+        </Typography>
+        <Box display="flex" justifyContent="center" gap={2}>
+          <IconButton
+            onClick={() => handleChipMenuToggle("doubleUp")}
+            disabled={userChips.doubleUp !== null}
+            size="large"
+            sx={{
+              backgroundColor: 'grey.200',
+              '&:hover': { backgroundColor: 'grey.300' },
+              borderRadius: '50%',
+              p: 1.5,
+            }}
+          >
+            <LooksTwoIcon color={userChips.doubleUp !== null ? "disabled" : "primary"} />
+          </IconButton>
+          <IconButton
+            onClick={() => handleChipMenuToggle("wildcard")}
+            disabled={userChips.wildcard !== null}
+            size="large"
+            sx={{
+              backgroundColor: 'grey.200',
+              '&:hover': { backgroundColor: 'grey.300' },
+              borderRadius: '50%',
+              p: 1.5,
+            }}
+          >
+            <ShuffleIcon color={userChips.wildcard !== null ? "disabled" : "primary"} />
+          </IconButton>
+        </Box>
+        {selectedChipMenu === "doubleUp" && (
+          <Box mt={2}>
+            <Typography variant="subtitle1">Double Up Chip</Typography>
+            <FormControl fullWidth>
+              <InputLabel id="doubleUp-select-label">Fixture</InputLabel>
+              <Select
+                labelId="doubleUp-select-label"
+                value={selectedDoubleUp || ""}
+                label="Fixture"
+                onChange={(e) => setSelectedDoubleUp(Number(e.target.value))}
+              >
+                {availableFixtures.map((fixture) => (
+                  <MenuItem key={fixture.match} value={fixture.match}>
+                    {`Match ${fixture.match} - ${fixture.date}: ${fixture.team1} vs ${fixture.team2}`}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        )}
+        {selectedChipMenu === "wildcard" && (
+          <Box mt={2}>
+            <Typography variant="subtitle1">Wildcard Chip</Typography>
+            <FormControl fullWidth>
+              <InputLabel id="wildcard-select-label">Fixture</InputLabel>
+              <Select
+                labelId="wildcard-select-label"
+                value={selectedWildcard || ""}
+                label="Fixture"
+                onChange={(e) => setSelectedWildcard(Number(e.target.value))}
+              >
+                {availableFixtures.map((fixture) => (
+                  <MenuItem key={fixture.match} value={fixture.match}>
+                    {`Match ${fixture.match} - ${fixture.date}: ${fixture.team1} vs ${fixture.team2}`}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        )}
+        {(selectedChipMenu &&
+          ((selectedChipMenu === "doubleUp" && selectedDoubleUp) ||
+           (selectedChipMenu === "wildcard" && selectedWildcard))) && (
+          <Box mt={2} textAlign="center">
+            <Button variant="contained" color="primary" onClick={handleApplyChip}>
+              Apply Chip
+            </Button>
+          </Box>
+        )}
+      </Box>
+
+      {/* --- CONFIRM CHIP ACTIVATION DIALOG --- */}
+      <Dialog open={confirmDialogOpen} onClose={handleConfirmCancel}>
+        <DialogTitle>Confirm Chip Activation</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {chipFixture
+              ? `Are you sure you want to activate the ${
+                  selectedChipMenu === "doubleUp" ? "Double Up" : "Wildcard"
+                } chip for Match ${chipFixture.match} - ${chipFixture.date}: ${chipFixture.team1} vs ${chipFixture.team2}?`
+              : ''}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmCancel} variant="contained" color="error">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmChip} variant="contained" color="success">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* --- EXISTING TABS FOR BRACKET SUBMISSION --- */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="Bracket Submission Tabs">
           <Tab label="Fixture Picks" {...a11yProps(0)} />
@@ -370,7 +659,6 @@ const BracketSubmission = () => {
                 }
                 disabled={locked}
               />
-              {/* Display the AI prediction in a nice, subtle way */}
               <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 0.5 }}>
                 AI Prediction: {bonusPredictions[question]}
               </Typography>
@@ -410,11 +698,7 @@ const BracketSubmission = () => {
         </Alert>
       </Snackbar>
 
-      {/* Deadline Popup Dialog */}
-      <Dialog
-        open={showDeadlinePopup}
-        onClose={handlePopupCancel}
-      >
+      <Dialog open={showDeadlinePopup} onClose={handlePopupCancel}>
         <DialogTitle>Submission Deadline Passed</DialogTitle>
         <DialogContent>
           <DialogContentText>

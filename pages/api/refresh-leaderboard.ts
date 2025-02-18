@@ -9,15 +9,17 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
 /**
  * Leaderboard evaluation function.
- * This is a simplified version based on your current client-side logic.
- * You may extract and refactor your existing function into a shared module.
+ * The doubleUpChips mapping is used for Group Stage processing:
+ * For each player, if they used a Double Up chip on a given match and their pick was correct,
+ * they receive double the points.
  */
 function calculateLeaderboard(
   groupStageData: any[][],
   super8Data: any[][],
   playoffsData: any[][],
   bonusesData: any[][],
-  linksData: any[][]
+  linksData: any[][],
+  doubleUpChips: { [player: string]: number } // mapping from player name to match number
 ) {
   const players: {
     [key: string]: {
@@ -30,7 +32,12 @@ function calculateLeaderboard(
     };
   } = {};
 
-  const processPredictions = (data: any[][], pointsPerCorrectPick: number, stage: string) => {
+  const processPredictions = (
+    data: any[][],
+    pointsPerCorrectPick: number,
+    stage: string,
+    doubleUpMap?: { [player: string]: number }
+  ) => {
     const header = data[0];
     if (!header || !Array.isArray(header) || !header.includes('Winner')) {
       console.error("Winner column not found in", data);
@@ -38,10 +45,13 @@ function calculateLeaderboard(
     }
     const winnerIndex = header.indexOf('Winner');
 
+    // Assume each row (starting at index 1) represents a match.
+    // We use the row index as the match number.
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       const winner = row[winnerIndex];
       if (!winner) continue;
+      const matchNumber = i; // row index equals match number
 
       for (let j = 0; j < header.length; j++) {
         const playerName = header[j];
@@ -59,13 +69,18 @@ function calculateLeaderboard(
               players[playerName].playoffPoints += 5;
             }
           } else if (row[j] === winner) {
-            players[playerName].totalPoints += pointsPerCorrectPick;
+            // For Group Stage, if the player used a Double Up chip for this match, double the points.
+            let pointsAwarded = pointsPerCorrectPick;
+            if (stage === "Group Stage" && doubleUpMap && doubleUpMap[playerName] === matchNumber) {
+              pointsAwarded = pointsPerCorrectPick * 2;
+            }
+            players[playerName].totalPoints += pointsAwarded;
             if (stage === "Group Stage") {
-              players[playerName].groupPoints += pointsPerCorrectPick;
+              players[playerName].groupPoints += pointsAwarded;
             } else if (stage === "Super 8") {
-              players[playerName].super8Points += pointsPerCorrectPick;
+              players[playerName].super8Points += pointsAwarded;
             } else if (stage === "Playoffs Semi-finals" || stage === "Playoffs Final") {
-              players[playerName].playoffPoints += pointsPerCorrectPick;
+              players[playerName].playoffPoints += pointsAwarded;
             }
           }
         }
@@ -74,7 +89,7 @@ function calculateLeaderboard(
   };
 
   if (groupStageData && groupStageData.length > 0) {
-    processPredictions(groupStageData, 10, "Group Stage");
+    processPredictions(groupStageData, 10, "Group Stage", doubleUpChips);
   } else {
     console.error("Group Stage data is empty or invalid");
   }
@@ -159,22 +174,8 @@ function calculateLeaderboard(
     console.error("Links data is empty or invalid");
   }
 
-  const leaderboard = Object.entries(players)
-    .map(([name, { groupPoints, super8Points, playoffPoints, bonusPoints, totalPoints, timestamp }]) => ({
-      name,
-      groupPoints,
-      super8Points,
-      playoffPoints,
-      bonusPoints,
-      totalPoints,
-      timestamp,
-    }))
-    .sort((a, b) =>
-      b.totalPoints - a.totalPoints ||
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-  return leaderboard;
+  // Return the players object so that we can build the leaderboard snapshot later.
+  return players;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -198,12 +199,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
 
     // Fetch sheet data from various tabs.
-    const [groupStageRes, super8Res, playoffsRes, bonusesRes, linksRes] = await Promise.all([
+    const [
+      groupStageRes,
+      super8Res,
+      playoffsRes,
+      bonusesRes,
+      linksRes,
+      chipsRes
+    ] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Predictions Overview!A1:Z1000' }),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Super8!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Playoffs!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Bonuses Overview!A1:Z1000' }),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Links!A:B' }),
+      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Chips!A:C' }).catch(() => ({ data: { values: [] } }))
     ]);
 
     const groupStageData = groupStageRes.data.values || [];
@@ -211,28 +220,92 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const playoffsData = playoffsRes.data.values || [];
     const bonusesData = bonusesRes.data.values || [];
     const linksData = linksRes.data.values || [];
+    const chipsRows = chipsRes.data.values || [];
 
-    // Evaluate the leaderboard using our function.
-    const leaderboard = calculateLeaderboard(groupStageData, super8Data, playoffsData, bonusesData, linksData);
+    // Build a mapping for Double Up chips from the Chips tab.
+    const doubleUpChips: { [player: string]: number } = {};
+    // Also build a mapping for Wildcard chips.
+    const wildcardChips: { [player: string]: number } = {};
+    if (chipsRows.length > 1) {
+      for (let i = 1; i < chipsRows.length; i++) {
+        const row = chipsRows[i];
+        const player = row[0];
+        const doubleUpValue = row[1]; // Column B for Double Up
+        const wildcardValue = row[2]; // Column C for Wildcard
+        if (player && doubleUpValue && doubleUpValue.trim() !== '') {
+          doubleUpChips[player] = parseInt(doubleUpValue, 10);
+        }
+        if (player && wildcardValue && wildcardValue.trim() !== '') {
+          wildcardChips[player] = parseInt(wildcardValue, 10);
+        }
+      }
+    }
+
+    // Determine the last completed fixture from Group Stage data.
+    // We assume that each row (starting at index 1) corresponds to a match,
+    // and we use the "Winner" column (found at index determined below).
+    let lastFixture = 0;
+    if (groupStageData.length > 1) {
+      const header = groupStageData[0];
+      const winnerIndex = header.indexOf('Winner');
+      for (let i = 1; i < groupStageData.length; i++) {
+        const row = groupStageData[i];
+        if (row[winnerIndex] && row[winnerIndex].trim() !== '') {
+          lastFixture = i; // use the row index as the match number
+        }
+      }
+    }
+
+    // Evaluate the leaderboard.
+    const players = calculateLeaderboard(groupStageData, super8Data, playoffsData, bonusesData, linksData, doubleUpChips);
+
+    // For each player, determine which chips have been used
+    // (only include chips if the chip's match number is <= lastFixture)
+    const chipsUsedMapping: { [player: string]: string } = {};
+    Object.keys(players).forEach((player) => {
+      let used: string[] = [];
+      if (doubleUpChips[player] && doubleUpChips[player] <= lastFixture) {
+        used.push("Double Up");
+      }
+      if (wildcardChips[player] && wildcardChips[player] <= lastFixture) {
+        used.push("Wildcard");
+      }
+      chipsUsedMapping[player] = used.join(", ");
+    });
 
     // Prepare a snapshot array for the "Leaderboard" tab.
+    // Updated header to include "Chips Used".
     const leaderboardValues = [
-      ['Rank', 'Player', 'Group Points', 'Super8 Points', 'Playoffs Points', 'Total Points', 'Timestamp'],
-      ...leaderboard.map((player, index) => [
-        index + 1,
-        player.name,
-        player.groupPoints,
-        player.super8Points,
-        player.playoffPoints,
-        player.totalPoints,
-        player.timestamp,
-      ]),
+      ['Rank', 'Player', 'Group Points', 'Super8 Points', 'Playoffs Points', 'Total Points', 'Timestamp', 'Chips Used'],
+      ...Object.entries(players)
+        .map(([name, { groupPoints, super8Points, playoffPoints, bonusPoints, totalPoints, timestamp }]) => ({
+          name,
+          groupPoints,
+          super8Points,
+          playoffPoints,
+          totalPoints,
+          timestamp,
+        }))
+        .sort((a, b) =>
+          b.totalPoints - a.totalPoints ||
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
+        .map((player, index) => [
+          index + 1,
+          player.name,
+          player.groupPoints,
+          player.super8Points,
+          player.playoffPoints,
+          player.totalPoints,
+          player.timestamp,
+          chipsUsedMapping[player.name] || ''
+        ]),
     ];
 
     // Update (or create) the "Leaderboard" tab with the snapshot.
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Leaderboard!A1:G1000',
+      range: 'Leaderboard!A1:H1000',
       valueInputOption: 'RAW',
       requestBody: { values: leaderboardValues },
     });

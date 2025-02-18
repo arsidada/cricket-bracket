@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Fetch the snapshot from the "Leaderboard" tab.
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Leaderboard!A1:G1000', // Assumes headers in first row.
+      range: 'Leaderboard!A1:H1000', // Assumes headers in first row.
     });
 
     const data = response.data.values;
@@ -42,6 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       playoffPoints: Number(row[4] || 0),
       totalPoints: Number(row[5] || 0),
       timestamp: row[6] || '',
+      chipsUsed: row[7] || '',
     }));
 
     return res.status(200).json({ players });

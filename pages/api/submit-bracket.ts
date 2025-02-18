@@ -43,7 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized - No session found' });
   }
 
-  const { name, picks, bonusAnswers } = req.body;
+  // Updated: Accept an optional flag isWildcard.
+  const { name, picks, bonusAnswers, isWildcard } = req.body;
   if (
     !name ||
     typeof name !== 'string' ||
@@ -190,15 +191,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // --- NEW STEP: Log Activity ---
-    // Log the activity with the appropriate event type and details.
-    await logActivity(
-      sheets,
-      process.env.GOOGLE_SHEET_ID!,
-      timestampEST,
-      eventType,
-      name,
-      eventDetails
-    );
+    // If this submission is NOT triggered by a wildcard swap, log the activity.
+    if (!isWildcard) {
+      await logActivity(
+        sheets,
+        process.env.GOOGLE_SHEET_ID!,
+        timestampEST,
+        eventType,
+        name,
+        eventDetails
+      );
+    }
 
     return res.status(200).json({ message: 'Bracket submitted successfully' });
   } catch (error) {

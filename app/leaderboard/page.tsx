@@ -18,13 +18,17 @@ import {
   Collapse,
   Snackbar,
   Button,
+  Chip,
+  Divider,
+  Skeleton,
 } from '@mui/material';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { styled } from '@mui/system';
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import { Divider } from '@mui/material';
+import LooksTwoIcon from '@mui/icons-material/LooksTwo';
+import ShuffleIcon from '@mui/icons-material/Shuffle';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,
@@ -37,6 +41,7 @@ const StyledTableCell = styled(TableCell)({
   backgroundColor: '#f5f5f5',
 });
 
+// Update the Player interface to include chipsUsed.
 interface Player {
   rank: string;
   name: string;
@@ -45,6 +50,7 @@ interface Player {
   bonusPoints: number;
   totalPoints: number;
   timestamp: string;
+  chipsUsed?: string; // e.g., "Double Up, Wildcard"
 }
 
 type StandingsDelta = { [playerName: string]: 'up' | 'down' | 'same' };
@@ -117,7 +123,37 @@ const Leaderboard = () => {
   };
 
   if (status === 'loading') {
-    return <Typography align="center" color="primary">Loading...</Typography>;
+    return (
+      <Container maxWidth="md" sx={{ pt: 4 }}>
+        <Box my={4}>
+          <Typography variant="h4" align="center" gutterBottom>
+            Leaderboard
+          </Typography>
+          <TableContainer component={Paper} elevation={3}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <StyledTableCell width={40} />
+                  <StyledTableCell><Skeleton variant="text" width={40} /></StyledTableCell>
+                  <StyledTableCell><Skeleton variant="text" width={100} /></StyledTableCell>
+                  <StyledTableCell><Skeleton variant="text" width={60} /></StyledTableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {Array.from(new Array(5)).map((_, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell><Skeleton variant="circular" width={24} height={24} /></TableCell>
+                    <TableCell><Skeleton variant="text" width={40} /></TableCell>
+                    <TableCell><Skeleton variant="text" width={100} /></TableCell>
+                    <TableCell><Skeleton variant="text" width={60} /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </Container>
+    );
   }
 
   if (!session) {
@@ -134,14 +170,14 @@ const Leaderboard = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ pt: 4 }}> {/* Minimal top padding */}
+    <Container maxWidth="md" sx={{ pt: 4 }}>
       <Box my={4}>
         <Typography variant="h4" align="center" gutterBottom>
           Leaderboard
         </Typography>
         {players.length === 0 ? (
           <Typography align="center" color="primary">
-            {'No leaderboard data available.'}
+            No leaderboard data available.
           </Typography>
         ) : (
           <TableContainer component={Paper} elevation={3}>
@@ -210,6 +246,49 @@ const Leaderboard = () => {
                               <Typography variant="body2" sx={{ pb: 1 }}>
                                 Time: {player.timestamp}
                               </Typography>
+                              {player.chipsUsed && player.chipsUsed.trim() !== '' && (
+                                <>
+                                  <Divider sx={{ my: 1 }} />
+                                  <Typography variant="body2" sx={{ pb: 0.5 }}>
+                                    Chips Used:
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                    {player.chipsUsed.split(',').map((chip) => {
+                                      const trimmed = chip.trim();
+                                      if (trimmed === "Double Up") {
+                                        return (
+                                          <Chip
+                                            key={trimmed}
+                                            icon={<LooksTwoIcon />}
+                                            label=""
+                                            size="small"
+                                            color="primary"
+                                          />
+                                        );
+                                      } else if (trimmed === "Wildcard") {
+                                        return (
+                                          <Chip
+                                            key={trimmed}
+                                            icon={<ShuffleIcon />}
+                                            label=""
+                                            size="small"
+                                            color="primary"
+                                          />
+                                        );
+                                      } else {
+                                        return (
+                                          <Chip
+                                            key={trimmed}
+                                            label={trimmed}
+                                            size="small"
+                                            color="primary"
+                                          />
+                                        );
+                                      }
+                                    })}
+                                  </Box>
+                                </>
+                              )}
                             </Box>
                           </Box>
                         </Collapse>
