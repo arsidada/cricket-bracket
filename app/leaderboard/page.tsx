@@ -124,7 +124,7 @@ const Leaderboard = () => {
 
   if (status === 'loading') {
     return (
-      <Container maxWidth="md" sx={{ pt: 4 }}>
+      <Container maxWidth="md" sx={{ pt: '10px' }}>
         <Box my={4}>
           <Typography variant="h4" align="center" gutterBottom>
             Leaderboard

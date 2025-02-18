@@ -459,7 +459,7 @@ const BracketSubmission = () => {
   }
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="sm" sx={{ pt: '10px' }}>
       <Box my={4} textAlign="center">
         <Typography variant="h4" gutterBottom>
           Your Bracket
@@ -475,7 +475,7 @@ const BracketSubmission = () => {
       </Box>
 
       {/* --- CHIP ACTIVATION UI --- */}
-      <Box my={4}>
+      <Box textAlign="center" my={4}>
         <Typography variant="h5" gutterBottom>
           Activate a Chip
         </Typography>

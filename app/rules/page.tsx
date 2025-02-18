@@ -2,10 +2,19 @@
 
 import React from 'react';
 import { Box, Typography, Paper } from '@mui/material';
+import LooksTwoIcon from '@mui/icons-material/LooksTwo';
+import ShuffleIcon from '@mui/icons-material/Shuffle';
 
 const RulesPage = () => {
   return (
-    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="100vh" p={3}>
+    <Box
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      minHeight="100vh"
+      p={3}
+    >
       <Paper elevation={3} sx={{ padding: 4, maxWidth: 800 }}>
         <Typography variant="h3" align="center" gutterBottom color="primary">
           CT 2025 Bracket Challenge Rules
@@ -65,6 +74,28 @@ const RulesPage = () => {
         </Typography>
         <Typography variant="body2" gutterBottom>
           • A maximum cap of <strong>30 bonus points</strong> will be applied to late submissions to prevent any undue advantage.
+        </Typography>
+
+        <Typography variant="h5" color="secondary" mt={4} gutterBottom>
+          6. Chip Features (Group Stage Only):
+        </Typography>
+        <Typography variant="body1" gutterBottom>
+          • <strong>
+            <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: 4 }}>
+              <LooksTwoIcon fontSize="small" />
+            </span>
+            Double Up Chip:
+          </strong>{' '}
+          For any group stage fixture, you can activate the Double Up chip before the match begins. If your prediction for that match is correct, your points for that fixture are doubled. Each participant can use the Double Up chip for only one fixture.
+        </Typography>
+        <Typography variant="body1" gutterBottom>
+          • <strong>
+            <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: 4 }}>
+              <ShuffleIcon fontSize="small" />
+            </span>
+            Wildcard Chip:
+          </strong>{' '}
+          For any group stage fixture, you can activate the Wildcard chip before the match begins. This chip allows you to swap your prediction for that fixture (choosing the opposite team) without penalty. Each participant can use the Wildcard chip for only one fixture.
         </Typography>
       </Paper>
     </Box>
