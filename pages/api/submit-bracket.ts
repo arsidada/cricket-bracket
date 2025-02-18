@@ -160,7 +160,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       "Most Centuries by a Player",
       "Player with the Most Catches",
       "Player with the Most Player-of-the-Match Awards",
-      "Best Bowling Economy",
+      "Best Bowling Economy (12.5 overs minimum)",
       "Highest Individual Score",
       "Fastest Fifty",
       "Fastest Century",
