@@ -41,7 +41,7 @@ const StyledTableCell = styled(TableCell)({
   backgroundColor: '#f5f5f5',
 });
 
-// Update the Player interface to include chipsUsed.
+// Update the Player interface to include chipsUsed and penalty.
 interface Player {
   rank: string;
   name: string;
@@ -50,6 +50,7 @@ interface Player {
   bonusPoints: number;
   totalPoints: number;
   timestamp: string;
+  penalty: number;
   chipsUsed?: string; // e.g., "Double Up, Wildcard"
 }
 
@@ -161,6 +162,7 @@ const Leaderboard = () => {
                   <StyledTableCell><Skeleton variant="text" width={40} /></StyledTableCell>
                   <StyledTableCell><Skeleton variant="text" width={100} /></StyledTableCell>
                   <StyledTableCell><Skeleton variant="text" width={60} /></StyledTableCell>
+                  <StyledTableCell><Skeleton variant="text" width={60} /></StyledTableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -169,6 +171,7 @@ const Leaderboard = () => {
                     <TableCell><Skeleton variant="circular" width={24} height={24} /></TableCell>
                     <TableCell><Skeleton variant="text" width={40} /></TableCell>
                     <TableCell><Skeleton variant="text" width={100} /></TableCell>
+                    <TableCell><Skeleton variant="text" width={60} /></TableCell>
                     <TableCell><Skeleton variant="text" width={60} /></TableCell>
                   </TableRow>
                 ))}
@@ -282,47 +285,49 @@ const Leaderboard = () => {
                               </Typography>
                               <Divider sx={{ my: 1 }} />
                               <Typography variant="body2" sx={{ pb: 0.5 }}>
-                                    Chips Used:
+                                Penalty: {player.penalty}
                               </Typography>
-                              {player.chipsUsed && player.chipsUsed.trim() !== '' && (
-                                <>
-                                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                    {player.chipsUsed.split(',').map((chip) => {
-                                      const trimmed = chip.trim();
-                                      if (trimmed === "Double Up") {
-                                        return (
-                                          <Chip
-                                            key={trimmed}
-                                            icon={<LooksTwoIcon />}
-                                            label=""
-                                            size="small"
-                                            color="primary"
-                                          />
-                                        );
-                                      } else if (trimmed === "Wildcard") {
-                                        return (
-                                          <Chip
-                                            key={trimmed}
-                                            icon={<ShuffleIcon />}
-                                            label=""
-                                            size="small"
-                                            color="primary"
-                                          />
-                                        );
-                                      } else {
-                                        return (
-                                          <Chip
-                                            key={trimmed}
-                                            label={trimmed}
-                                            size="small"
-                                            color="primary"
-                                          />
-                                        );
-                                      }
-                                    })}
-                                  </Box>
-                                </>
-                              )}
+                              <Divider sx={{ my: 1 }} />
+                              <Typography variant="body2" sx={{ pb: 0.5 }}>
+                                Chips Used:
+                              </Typography>
+                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                {player.chipsUsed &&
+                                  player.chipsUsed.trim() !== '' &&
+                                  player.chipsUsed.split(',').map((chip) => {
+                                    const trimmed = chip.trim();
+                                    if (trimmed === "Double Up") {
+                                      return (
+                                        <Chip
+                                          key={trimmed}
+                                          icon={<LooksTwoIcon />}
+                                          label=""
+                                          size="small"
+                                          color="primary"
+                                        />
+                                      );
+                                    } else if (trimmed === "Wildcard") {
+                                      return (
+                                        <Chip
+                                          key={trimmed}
+                                          icon={<ShuffleIcon />}
+                                          label=""
+                                          size="small"
+                                          color="primary"
+                                        />
+                                      );
+                                    } else {
+                                      return (
+                                        <Chip
+                                          key={trimmed}
+                                          label={trimmed}
+                                          size="small"
+                                          color="primary"
+                                        />
+                                      );
+                                    }
+                                  })}
+                              </Box>
                             </Box>
                           </Box>
                         </Collapse>

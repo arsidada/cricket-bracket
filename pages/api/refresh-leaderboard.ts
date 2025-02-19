@@ -7,11 +7,20 @@ import { DateTime } from 'luxon';
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
+// Set the deadline as a Luxon DateTime in EST.
+const deadlineDT = DateTime.fromISO("2025-02-19T03:59:00", { zone: "America/New_York" });
+
 /**
  * Leaderboard evaluation function.
+ * 
  * The doubleUpChips mapping is used for Group Stage processing:
  * For each player, if they used a Double Up chip on a given match and their pick was correct,
  * they receive double the points.
+ * 
+ * Additionally, for Group Stage, if a player's submission (from submissionTimes mapping)
+ * is later than the deadline, then for the first N matches (where 
+ * N = Math.ceil((submissionTime - deadline) in days)), no points are awarded and a penalty
+ * of -10 per affected match is applied.
  */
 function calculateLeaderboard(
   groupStageData: any[][],
@@ -19,7 +28,8 @@ function calculateLeaderboard(
   playoffsData: any[][],
   bonusesData: any[][],
   linksData: any[][],
-  doubleUpChips: { [player: string]: number } // mapping from player name to match number
+  doubleUpChips: { [player: string]: number },
+  submissionTimeMap: { [player: string]: DateTime }  // renamed here
 ) {
   const players: {
     [key: string]: {
@@ -29,6 +39,7 @@ function calculateLeaderboard(
       bonusPoints: number;
       totalPoints: number;
       timestamp: string;
+      penalty: number;
     };
   } = {};
 
@@ -57,7 +68,7 @@ function calculateLeaderboard(
         const playerName = header[j];
         if (!['Date', 'Match', 'Team 1', 'Team 2', 'Winner', 'POTM'].includes(playerName)) {
           if (!players[playerName]) {
-            players[playerName] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '' };
+            players[playerName] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '', penalty: 0 };
           }
           if (winner === "DRAW") {
             players[playerName].totalPoints += 5;
@@ -69,6 +80,21 @@ function calculateLeaderboard(
               players[playerName].playoffPoints += 5;
             }
           } else if (row[j] === winner) {
+            // For Group Stage, check if the player's submission was late.
+            if (stage === "Group Stage") {
+              const submission = submissionTimeMap[playerName];
+              if (submission && submission > deadlineDT) {
+                const diffDays = submission.diff(deadlineDT, 'days').days;
+                const lateMatches = Math.ceil(diffDays);
+
+                if (matchNumber <= lateMatches) {
+                  players[playerName].penalty -= 10;
+                  players[playerName].totalPoints -= 10;
+                  players[playerName].groupPoints -= 10;
+                  continue; // Skip awarding points for this match.
+                }
+              }
+            }
             // For Group Stage, if the player used a Double Up chip for this match, double the points.
             let pointsAwarded = pointsPerCorrectPick;
             if (stage === "Group Stage" && doubleUpMap && doubleUpMap[playerName] === matchNumber) {
@@ -130,7 +156,7 @@ function calculateLeaderboard(
         const playerName = header[j];
         if (playerName !== 'Category' && playerName !== 'WINNER') {
           if (!players[playerName]) {
-            players[playerName] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '' };
+            players[playerName] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '', penalty: 0 };
           }
           if (row[j] === winner) {
             players[playerName].bonusPoints += 10;
@@ -152,7 +178,7 @@ function calculateLeaderboard(
     header.forEach((col: string) => {
       if (!['Date', 'Match', 'Team 1', 'Team 2', 'Winner', 'POTM'].includes(col)) {
         if (!players[col]) {
-          players[col] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '' };
+          players[col] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '', penalty: 0 };
         }
       }
     });
@@ -242,8 +268,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Determine the last completed fixture from Group Stage data.
-    // We assume that each row (starting at index 1) corresponds to a match,
-    // and we use the "Winner" column (found at index determined below).
     let lastFixture = 0;
     if (groupStageData.length > 1) {
       const header = groupStageData[0];
@@ -256,11 +280,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Evaluate the leaderboard.
-    const players = calculateLeaderboard(groupStageData, super8Data, playoffsData, bonusesData, linksData, doubleUpChips);
+    // Build submission times mapping from linksData.
+    const submissionTimeMap: { [player: string]: DateTime } = {};
+    if (linksData && linksData.length > 0) {
+      const linksHeader = linksData[0];
+      const nameIndex = linksHeader.indexOf('Players');
+      const timestampIndex = linksHeader.indexOf('Timestamp of submission');
+      for (let i = 1; i < linksData.length; i++) {
+        const row = linksData[i];
+        const playerName = row[nameIndex];
+        const timestampStr = row[timestampIndex];
+        if (playerName && timestampStr) {
+          submissionTimeMap[playerName] = DateTime.fromFormat(timestampStr, "yyyy-MM-dd HH:mm:ss", { zone: "America/New_York" });
+        }
+      }
+    }
 
-    // For each player, determine which chips have been used
-    // (only include chips if the chip's match number is <= lastFixture)
+    // Evaluate the leaderboard. Pass in the submissionTimeMap.
+    const players = calculateLeaderboard(groupStageData, super8Data, playoffsData, bonusesData, linksData, doubleUpChips, submissionTimeMap);
+
+    // For each player, determine which chips have been used (only include chips if the chip's match number is <= lastFixture)
     const chipsUsedMapping: { [player: string]: string } = {};
     Object.keys(players).forEach((player) => {
       let used: string[] = [];
@@ -274,17 +313,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Prepare a snapshot array for the "Leaderboard" tab.
-    // Updated header to include "Chips Used".
+    // New header includes a "Penalty" column.
     const leaderboardValues = [
-      ['Rank', 'Player', 'Group Points', 'Super8 Points', 'Playoffs Points', 'Total Points', 'Timestamp', 'Chips Used'],
+      ['Rank', 'Player', 'Group Points', 'Super8 Points', 'Playoffs Points', 'Total Points', 'Penalty', 'Timestamp', 'Chips Used'],
       ...Object.entries(players)
-        .map(([name, { groupPoints, super8Points, playoffPoints, bonusPoints, totalPoints, timestamp }]) => ({
+        .map(([name, { groupPoints, super8Points, playoffPoints, bonusPoints, totalPoints, timestamp, penalty }]) => ({
           name,
           groupPoints,
           super8Points,
           playoffPoints,
           totalPoints,
           timestamp,
+          penalty,
         }))
         .sort((a, b) =>
           b.totalPoints - a.totalPoints ||
@@ -297,6 +337,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           player.super8Points,
           player.playoffPoints,
           player.totalPoints,
+          player.penalty,
           player.timestamp,
           chipsUsedMapping[player.name] || ''
         ]),
@@ -305,7 +346,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Update (or create) the "Leaderboard" tab with the snapshot.
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Leaderboard!A1:H1000',
+      range: 'Leaderboard!A1:I1000',
       valueInputOption: 'RAW',
       requestBody: { values: leaderboardValues },
     });

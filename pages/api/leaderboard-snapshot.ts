@@ -41,8 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       super8Points: Number(row[3] || 0),
       playoffPoints: Number(row[4] || 0),
       totalPoints: Number(row[5] || 0),
-      timestamp: row[6] || '',
-      chipsUsed: row[7] || '',
+      penalty: Number(row[6] || 0),         // new column: Penalty from column G
+      timestamp: row[7] || '',              // Timestamp from column H
+      chipsUsed: row[8] || '',              // Chips Used from column I
     }));
 
     return res.status(200).json({ players });
