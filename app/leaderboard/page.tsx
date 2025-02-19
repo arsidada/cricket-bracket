@@ -122,6 +122,30 @@ const Leaderboard = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
+  // --- NEW: Refresh Leaderboard Button for Admin ---
+  const handleRefreshLeaderboard = async () => {
+    try {
+      const response = await fetch('/api/refresh-leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (response.ok) {
+        showSnackbar("Leaderboard refreshed successfully!", "success");
+        // Update the leaderboard snapshot after refresh.
+        await fetchLeaderboardSnapshot();
+      } else {
+        showSnackbar("Failed to refresh leaderboard", "error");
+      }
+    } catch (error) {
+      showSnackbar("An error occurred while refreshing leaderboard", "error");
+    }
+  };
+
+  const showSnackbar = (message: string, severity: "success" | "error") => {
+    setSnackbar({ open: true, message, severity });
+  };
+
   if (status === 'loading') {
     return (
       <Container maxWidth="md" sx={{ pt: '10px' }}>
@@ -171,6 +195,15 @@ const Leaderboard = () => {
 
   return (
     <Container maxWidth="md" sx={{ pt: 4 }}>
+      {/* --- NEW: Refresh Button (only for arsalan.rana@gmail.com) --- */}
+      {session.user?.email === 'arsalan.rana@gmail.com' && (
+        <Box display="flex" justifyContent="center" mb={2}>
+          <Button variant="contained" color="secondary" onClick={handleRefreshLeaderboard}>
+            Refresh Leaderboard
+          </Button>
+        </Box>
+      )}
+
       <Box my={4}>
         <Typography variant="h4" align="center" gutterBottom>
           Leaderboard
@@ -207,6 +240,7 @@ const Leaderboard = () => {
                       </TableCell>
                       <TableCell>
                         {player.rank}
+                        {/* Delta indicators */}
                         {deltaMap[player.name] === 'up' && (
                           <ArrowUpwardIcon
                             style={{ color: 'green', verticalAlign: 'middle', marginLeft: 4 }}
@@ -246,12 +280,12 @@ const Leaderboard = () => {
                               <Typography variant="body2" sx={{ pb: 1 }}>
                                 Time: {player.timestamp}
                               </Typography>
+                              <Divider sx={{ my: 1 }} />
+                              <Typography variant="body2" sx={{ pb: 0.5 }}>
+                                    Chips Used:
+                              </Typography>
                               {player.chipsUsed && player.chipsUsed.trim() !== '' && (
                                 <>
-                                  <Divider sx={{ my: 1 }} />
-                                  <Typography variant="body2" sx={{ pb: 0.5 }}>
-                                    Chips Used:
-                                  </Typography>
                                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                     {player.chipsUsed.split(',').map((chip) => {
                                       const trimmed = chip.trim();
