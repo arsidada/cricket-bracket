@@ -17,7 +17,7 @@ const deadlineDT = DateTime.fromISO("2025-02-19T03:59:00", { zone: "America/New_
  * For each player, if they used a Double Up chip on a given match and their pick was correct,
  * they receive double the points.
  * 
- * Additionally, for Group Stage, if a player's submission (from submissionTimes mapping)
+ * Additionally, for Group Stage, if a player's submission (from submissionTimeMap)
  * is later than the deadline, then for the first N matches (where 
  * N = Math.ceil((submissionTime - deadline) in days)), no points are awarded and a penalty
  * of -10 per affected match is applied.
@@ -29,7 +29,7 @@ function calculateLeaderboard(
   bonusesData: any[][],
   linksData: any[][],
   doubleUpChips: { [player: string]: number },
-  submissionTimeMap: { [player: string]: DateTime }  // renamed here
+  submissionTimeMap: { [player: string]: DateTime }
 ) {
   const players: {
     [key: string]: {
@@ -56,19 +56,26 @@ function calculateLeaderboard(
     }
     const winnerIndex = header.indexOf('Winner');
 
-    // Assume each row (starting at index 1) represents a match.
-    // We use the row index as the match number.
+    // Each row (starting at index 1) represents a match; row index equals match number.
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       const winner = row[winnerIndex];
       if (!winner) continue;
-      const matchNumber = i; // row index equals match number
+      const matchNumber = i;
 
       for (let j = 0; j < header.length; j++) {
         const playerName = header[j];
         if (!['Date', 'Match', 'Team 1', 'Team 2', 'Winner', 'POTM'].includes(playerName)) {
           if (!players[playerName]) {
-            players[playerName] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '', penalty: 0 };
+            players[playerName] = {
+              groupPoints: 0,
+              super8Points: 0,
+              playoffPoints: 0,
+              bonusPoints: 0,
+              totalPoints: 0,
+              timestamp: '',
+              penalty: 0,
+            };
           }
           if (winner === "DRAW") {
             players[playerName].totalPoints += 5;
@@ -80,13 +87,11 @@ function calculateLeaderboard(
               players[playerName].playoffPoints += 5;
             }
           } else if (row[j] === winner) {
-            // For Group Stage, check if the player's submission was late.
             if (stage === "Group Stage") {
               const submission = submissionTimeMap[playerName];
               if (submission && submission > deadlineDT) {
                 const diffDays = submission.diff(deadlineDT, 'days').days;
                 const lateMatches = Math.ceil(diffDays);
-
                 if (matchNumber <= lateMatches) {
                   players[playerName].penalty -= 10;
                   players[playerName].totalPoints -= 10;
@@ -95,7 +100,6 @@ function calculateLeaderboard(
                 }
               }
             }
-            // For Group Stage, if the player used a Double Up chip for this match, double the points.
             let pointsAwarded = pointsPerCorrectPick;
             if (stage === "Group Stage" && doubleUpMap && doubleUpMap[playerName] === matchNumber) {
               pointsAwarded = pointsPerCorrectPick * 2;
@@ -156,7 +160,15 @@ function calculateLeaderboard(
         const playerName = header[j];
         if (playerName !== 'Category' && playerName !== 'WINNER') {
           if (!players[playerName]) {
-            players[playerName] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '', penalty: 0 };
+            players[playerName] = {
+              groupPoints: 0,
+              super8Points: 0,
+              playoffPoints: 0,
+              bonusPoints: 0,
+              totalPoints: 0,
+              timestamp: '',
+              penalty: 0,
+            };
           }
           if (row[j] === winner) {
             players[playerName].bonusPoints += 10;
@@ -178,7 +190,15 @@ function calculateLeaderboard(
     header.forEach((col: string) => {
       if (!['Date', 'Match', 'Team 1', 'Team 2', 'Winner', 'POTM'].includes(col)) {
         if (!players[col]) {
-          players[col] = { groupPoints: 0, super8Points: 0, playoffPoints: 0, bonusPoints: 0, totalPoints: 0, timestamp: '', penalty: 0 };
+          players[col] = {
+            groupPoints: 0,
+            super8Points: 0,
+            playoffPoints: 0,
+            bonusPoints: 0,
+            totalPoints: 0,
+            timestamp: '',
+            penalty: 0,
+          };
         }
       }
     });
@@ -223,6 +243,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+
+    // Fetch the current leaderboard snapshot (if it exists) to get previous ranks.
+    let prevRankMapping: { [player: string]: number } = {};
+    try {
+      const currentSnapshotRes = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'Leaderboard!A2:J1000',
+      });
+      const currentData = currentSnapshotRes.data.values;
+      if (currentData && currentData.length > 0) {
+        // Assuming header: [Rank, Previous Rank, Player, Group Points, Super8 Points, Playoffs Points, Total Points, Penalty, Timestamp, Chips Used]
+        for (const row of currentData) {
+          const playerName = row[2]; // Column C: Player
+          const prevRank = Number(row[0]); // Column A: Rank from previous snapshot
+          if (playerName && !isNaN(prevRank)) {
+            prevRankMapping[playerName] = prevRank;
+          }
+        }
+      }
+    } catch (e) {
+      console.log("No previous snapshot found; starting fresh.");
+    }
 
     // Fetch sheet data from various tabs.
     const [
@@ -313,9 +355,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Prepare a snapshot array for the "Leaderboard" tab.
-    // New header includes a "Penalty" column.
+    // New header includes "Rank", "Previous Rank", "Player", "Group Points", "Super8 Points",
+    // "Playoffs Points", "Total Points", "Penalty", "Timestamp", "Chips Used"
     const leaderboardValues = [
-      ['Rank', 'Player', 'Group Points', 'Super8 Points', 'Playoffs Points', 'Total Points', 'Penalty', 'Timestamp', 'Chips Used'],
+      ['Rank', 'Previous Rank', 'Player', 'Group Points', 'Super8 Points', 'Playoffs Points', 'Total Points', 'Penalty', 'Timestamp', 'Chips Used'],
       ...Object.entries(players)
         .map(([name, { groupPoints, super8Points, playoffPoints, bonusPoints, totalPoints, timestamp, penalty }]) => ({
           name,
@@ -332,6 +375,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         )
         .map((player, index) => [
           index + 1,
+          prevRankMapping[player.name] || '', // Use previous rank from snapshot, if available.
           player.name,
           player.groupPoints,
           player.super8Points,
@@ -343,10 +387,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ]),
     ];
 
-    // Update (or create) the "Leaderboard" tab with the snapshot.
+    // Update (or create) the "Leaderboard" tab with the new snapshot.
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Leaderboard!A1:I1000',
+      range: 'Leaderboard!A1:J1000',
       valueInputOption: 'RAW',
       requestBody: { values: leaderboardValues },
     });

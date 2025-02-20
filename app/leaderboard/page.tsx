@@ -1,4 +1,3 @@
-// app/leaderboard/page.tsx
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -18,22 +17,15 @@ import {
   Collapse,
   Snackbar,
   Button,
-  Chip,
   Divider,
-  Skeleton,
 } from '@mui/material';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { styled } from '@mui/system';
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import LooksTwoIcon from '@mui/icons-material/LooksTwo';
-import ShuffleIcon from '@mui/icons-material/Shuffle';
 
-const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
-  props,
-  ref
-) {
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
@@ -41,17 +33,19 @@ const StyledTableCell = styled(TableCell)({
   backgroundColor: '#f5f5f5',
 });
 
-// Update the Player interface to include chipsUsed and penalty.
+// Updated interface: bonusPoints added.
 interface Player {
   rank: string;
+  previousRank: string;
   name: string;
   groupPoints: number;
+  super8Points: number;
   playoffPoints: number;
   bonusPoints: number;
   totalPoints: number;
-  timestamp: string;
   penalty: number;
-  chipsUsed?: string; // e.g., "Double Up, Wildcard"
+  timestamp: string;
+  chipsUsed: string;
 }
 
 type StandingsDelta = { [playerName: string]: 'up' | 'down' | 'same' };
@@ -68,30 +62,32 @@ const Leaderboard = () => {
     severity: 'success',
   });
 
-  // Use a ref to store previous players for calculating standing changes.
+  // Use a ref to store previous players snapshot if needed.
   const prevPlayersRef = useRef<Player[]>([]);
 
   const fetchLeaderboardSnapshot = async () => {
     try {
       const response = await fetch('/api/leaderboard-snapshot', { cache: 'no-store' });
       if (response.status === 404) {
-        // Snapshot not found; set players to empty so headers show.
         setPlayers([]);
         return;
       }
       const result = await response.json();
       if (response.ok) {
         const newPlayers: Player[] = result.players;
-        // Calculate delta by comparing newPlayers with previous snapshot.
+        // Compute delta based on previousRank vs current rank.
         const newDeltaMap: StandingsDelta = {};
-        newPlayers.forEach((player, index) => {
-          const prevIndex = prevPlayersRef.current.findIndex((p) => p.name === player.name);
-          if (prevIndex === -1) {
-            newDeltaMap[player.name] = 'same';
-          } else if (index < prevIndex) {
-            newDeltaMap[player.name] = 'up';
-          } else if (index > prevIndex) {
-            newDeltaMap[player.name] = 'down';
+        newPlayers.forEach((player) => {
+          const prevRank = Number(player.previousRank);
+          const currRank = Number(player.rank);
+          if (!isNaN(prevRank) && !isNaN(currRank)) {
+            if (currRank < prevRank) {
+              newDeltaMap[player.name] = 'up';
+            } else if (currRank > prevRank) {
+              newDeltaMap[player.name] = 'down';
+            } else {
+              newDeltaMap[player.name] = 'same';
+            }
           } else {
             newDeltaMap[player.name] = 'same';
           }
@@ -117,67 +113,16 @@ const Leaderboard = () => {
     setOpenRows((prev) => ({ ...prev, [playerName]: !prev[playerName] }));
   };
 
-  // Updated onClose handler to match Snackbar type requirements.
-  const handleSnackbarClose = (event: React.SyntheticEvent<Element, Event> | Event, reason?: string) => {
+  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') return;
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
-  // --- NEW: Refresh Leaderboard Button for Admin ---
-  const handleRefreshLeaderboard = async () => {
-    try {
-      const response = await fetch('/api/refresh-leaderboard', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-      if (response.ok) {
-        showSnackbar("Leaderboard refreshed successfully!", "success");
-        // Update the leaderboard snapshot after refresh.
-        await fetchLeaderboardSnapshot();
-      } else {
-        showSnackbar("Failed to refresh leaderboard", "error");
-      }
-    } catch (error) {
-      showSnackbar("An error occurred while refreshing leaderboard", "error");
-    }
-  };
-
-  const showSnackbar = (message: string, severity: "success" | "error") => {
-    setSnackbar({ open: true, message, severity });
-  };
-
   if (status === 'loading') {
     return (
-      <Container maxWidth="md" sx={{ pt: '10px' }}>
-        <Box my={4}>
-          <Typography variant="h4" align="center" gutterBottom>
-            Leaderboard
-          </Typography>
-          <TableContainer component={Paper} elevation={3}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell width={40} />
-                  <StyledTableCell><Skeleton variant="text" width={40} /></StyledTableCell>
-                  <StyledTableCell><Skeleton variant="text" width={100} /></StyledTableCell>
-                  <StyledTableCell><Skeleton variant="text" width={60} /></StyledTableCell>
-                  <StyledTableCell><Skeleton variant="text" width={60} /></StyledTableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {Array.from(new Array(5)).map((_, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell><Skeleton variant="circular" width={24} height={24} /></TableCell>
-                    <TableCell><Skeleton variant="text" width={40} /></TableCell>
-                    <TableCell><Skeleton variant="text" width={100} /></TableCell>
-                    <TableCell><Skeleton variant="text" width={60} /></TableCell>
-                    <TableCell><Skeleton variant="text" width={60} /></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+      <Container maxWidth="sm" sx={{ pt: 4 }}>
+        <Box display="flex" justifyContent="center" my={4}>
+          <Typography align="center" color="primary">Loading...</Typography>
         </Box>
       </Container>
     );
@@ -197,16 +142,7 @@ const Leaderboard = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ pt: 4 }}>
-      {/* --- NEW: Refresh Button (only for arsalan.rana@gmail.com) --- */}
-      {session.user?.email === 'arsalan.rana@gmail.com' && (
-        <Box display="flex" justifyContent="center" mb={2}>
-          <Button variant="contained" color="secondary" onClick={handleRefreshLeaderboard}>
-            Refresh Leaderboard
-          </Button>
-        </Box>
-      )}
-
+    <Container maxWidth="sm" sx={{ pt: 4, pb: 4 }}>
       <Box my={4}>
         <Typography variant="h4" align="center" gutterBottom>
           Leaderboard
@@ -243,7 +179,6 @@ const Leaderboard = () => {
                       </TableCell>
                       <TableCell>
                         {player.rank}
-                        {/* Delta indicators */}
                         {deltaMap[player.name] === 'up' && (
                           <ArrowUpwardIcon
                             style={{ color: 'green', verticalAlign: 'middle', marginLeft: 4 }}
@@ -289,45 +224,8 @@ const Leaderboard = () => {
                               </Typography>
                               <Divider sx={{ my: 1 }} />
                               <Typography variant="body2" sx={{ pb: 0.5 }}>
-                                Chips Used:
+                                Chips Used: {player.chipsUsed}
                               </Typography>
-                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                {player.chipsUsed &&
-                                  player.chipsUsed.trim() !== '' &&
-                                  player.chipsUsed.split(',').map((chip) => {
-                                    const trimmed = chip.trim();
-                                    if (trimmed === "Double Up") {
-                                      return (
-                                        <Chip
-                                          key={trimmed}
-                                          icon={<LooksTwoIcon />}
-                                          label=""
-                                          size="small"
-                                          color="primary"
-                                        />
-                                      );
-                                    } else if (trimmed === "Wildcard") {
-                                      return (
-                                        <Chip
-                                          key={trimmed}
-                                          icon={<ShuffleIcon />}
-                                          label=""
-                                          size="small"
-                                          color="primary"
-                                        />
-                                      );
-                                    } else {
-                                      return (
-                                        <Chip
-                                          key={trimmed}
-                                          label={trimmed}
-                                          size="small"
-                                          color="primary"
-                                        />
-                                      );
-                                    }
-                                  })}
-                              </Box>
                             </Box>
                           </Box>
                         </Collapse>
@@ -346,9 +244,9 @@ const Leaderboard = () => {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <MuiAlert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
-        </Alert>
+        </MuiAlert>
       </Snackbar>
     </Container>
   );

@@ -11,7 +11,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Authenticate using the service account credentials.
     const auth = new google.auth.JWT({
       email: process.env.GOOGLE_CLIENT_EMAIL,
       key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
@@ -21,29 +20,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
 
-    // Fetch the snapshot from the "Leaderboard" tab.
+    // Updated range: expecting 10 columns now.
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Leaderboard!A1:H1000', // Assumes headers in first row.
+      range: 'Leaderboard!A1:J1000',
     });
 
     const data = response.data.values;
     if (!data || data.length === 0) {
-      // If no data is found, return an empty array.
       return res.status(200).json({ players: [] });
     }
 
-    // Assume the first row is header: [Rank, Player, Group Points, Super8 Points, Playoffs Points, Total Points, Timestamp]
+    // Map the columns:
+    // 0: Rank, 1: Previous Rank, 2: Player, 3: Group Points, 4: Super8 Points,
+    // 5: Playoffs Points, 6: Total Points, 7: Penalty, 8: Timestamp, 9: Chips Used
     const players = data.slice(1).map((row) => ({
       rank: row[0] || '',
-      name: row[1] || '',
-      groupPoints: Number(row[2] || 0),
-      super8Points: Number(row[3] || 0),
-      playoffPoints: Number(row[4] || 0),
-      totalPoints: Number(row[5] || 0),
-      penalty: Number(row[6] || 0),         // new column: Penalty from column G
-      timestamp: row[7] || '',              // Timestamp from column H
-      chipsUsed: row[8] || '',              // Chips Used from column I
+      previousRank: row[1] || '',
+      name: row[2] || '',
+      groupPoints: Number(row[3] || 0),
+      super8Points: Number(row[4] || 0),
+      playoffPoints: Number(row[5] || 0),
+      totalPoints: Number(row[6] || 0),
+      penalty: Number(row[7] || 0),
+      timestamp: row[8] || '',
+      chipsUsed: row[9] || '',
     }));
 
     return res.status(200).json({ players });
