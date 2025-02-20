@@ -77,7 +77,7 @@ const AllBonusPicksAllPage = () => {
   const fetchBonusPicks = async () => {
     setLoading(true);
     try {
-      // Call the endpoint without a name query parameter so it returns all bonus picks.
+      // Call the endpoint without a name parameter so it returns bonus picks for all players.
       const res = await fetch('/api/get-bonus-picks', { cache: 'no-store' });
       const data = await res.json();
       if (res.ok) {
@@ -112,7 +112,7 @@ const AllBonusPicksAllPage = () => {
     setTransformedData(categoryMap);
   };
 
-  // For table view, also prepare a list of player names (excluding "WINNERS").
+  // For the table view, prepare an array of player names (excluding "WINNERS").
   const playerList = bonusPicks ? Object.keys(bonusPicks).filter(name => name.trim().toUpperCase() !== "WINNERS") : [];
 
   useEffect(() => {
@@ -153,17 +153,23 @@ const AllBonusPicksAllPage = () => {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ pt: 4, pb: 4 }}>
+    <Container maxWidth="100%" sx={{ pt: 4, pb: 4 }}>
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h4" color="primary">
             Bonus Picks
           </Typography>
           <Box>
-            <IconButton color={viewMode === 'accordion' ? 'primary' : 'default'} onClick={() => setViewMode('accordion')}>
+            <IconButton
+              color={viewMode === 'accordion' ? 'primary' : 'default'}
+              onClick={() => setViewMode('accordion')}
+            >
               <ViewListIcon />
             </IconButton>
-            <IconButton color={viewMode === 'table' ? 'primary' : 'default'} onClick={() => setViewMode('table')}>
+            <IconButton
+              color={viewMode === 'table' ? 'primary' : 'default'}
+              onClick={() => setViewMode('table')}
+            >
               <GridOnIcon />
             </IconButton>
           </Box>
@@ -201,11 +207,18 @@ const AllBonusPicksAllPage = () => {
               </>
             )}
             {viewMode === 'table' && (
-              <Box sx={{ overflowX: 'auto' }}>
+              <Box
+                sx={{
+                  overflowX: 'auto',
+                  width: '100%',
+                  mx: 'auto',
+                  '& table': { width: '100%', minWidth: { xs: 500, md: 1000 } },
+                }}
+              >
                 <Table>
                   <TableHead>
                     <TableRow>
-                      {/* Category column: make it sticky */}
+                      {/* Sticky category column */}
                       <TableCell
                         sx={{
                           position: 'sticky',
@@ -234,7 +247,7 @@ const AllBonusPicksAllPage = () => {
                             zIndex: 1,
                           }}
                         >
-                          {category}
+                          <strong>{category}</strong>
                         </TableCell>
                         {playerList.map((player) => (
                           <TableCell key={player} align="center">
