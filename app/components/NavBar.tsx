@@ -60,6 +60,11 @@ const NavBar: React.FC = () => {
             <ListItemText primary="Fixture Picks" />
           </ListItem>
         </Link>
+        <Link href="/bonus-picks" passHref>
+          <ListItem button component="a">
+            <ListItemText primary="Bonus Picks" />
+          </ListItem>
+        </Link>
         <Link href="/leaderboard" passHref>
           <ListItem button component="a">
             <ListItemText primary="Leaderboard" />
