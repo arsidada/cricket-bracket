@@ -153,7 +153,7 @@ const AllBonusPicksAllPage = () => {
   }
 
   return (
-    <Container maxWidth="100%" sx={{ pt: 4, pb: 4 }}>
+    <Container maxWidth={false} sx={{ pt: 4, pb: 4 }}>
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h4" color="primary">
