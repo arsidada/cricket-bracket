@@ -48,10 +48,13 @@ const RulesPage = () => {
         </Typography>
 
         <Typography variant="h5" color="secondary" mt={4} gutterBottom>
-          4. Bonus Predictions (due Feb 19th, 3:59AM EST):
+          4. Bonus Predictions (Group Stage Only, due Feb 19th, 3:59AM EST):
         </Typography>
         <Typography variant="body1" gutterBottom>
-          • Each correct prediction awards <strong>10 points</strong>
+          • Each correct prediction awards <strong>10 points</strong>.
+        </Typography>
+        <Typography variant="body2" gutterBottom>
+          Note: Bonus picks apply only to the group stage.
         </Typography>
 
         <Typography variant="h5" color="secondary" mt={4} gutterBottom>
