@@ -17,6 +17,7 @@ import {
   Collapse,
   Snackbar,
   Button,
+  Chip,
   Divider,
 } from '@mui/material';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
@@ -24,6 +25,8 @@ import { styled } from '@mui/system';
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import LooksTwoIcon from '@mui/icons-material/LooksTwo';
+import ShuffleIcon from '@mui/icons-material/Shuffle';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -33,7 +36,6 @@ const StyledTableCell = styled(TableCell)({
   backgroundColor: '#f5f5f5',
 });
 
-// Updated interface: bonusPoints added.
 interface Player {
   rank: string;
   previousRank: string;
@@ -180,16 +182,10 @@ const Leaderboard = () => {
                       <TableCell>
                         {player.rank}
                         {deltaMap[player.name] === 'up' && (
-                          <ArrowUpwardIcon
-                            style={{ color: 'green', verticalAlign: 'middle', marginLeft: 4 }}
-                            fontSize="small"
-                          />
+                          <ArrowUpwardIcon style={{ color: 'green', verticalAlign: 'middle', marginLeft: 4 }} fontSize="small" />
                         )}
                         {deltaMap[player.name] === 'down' && (
-                          <ArrowDownwardIcon
-                            style={{ color: 'red', verticalAlign: 'middle', marginLeft: 4 }}
-                            fontSize="small"
-                          />
+                          <ArrowDownwardIcon style={{ color: 'red', verticalAlign: 'middle', marginLeft: 4 }} fontSize="small" />
                         )}
                       </TableCell>
                       <TableCell>{player.name}</TableCell>
@@ -224,8 +220,46 @@ const Leaderboard = () => {
                               </Typography>
                               <Divider sx={{ my: 1 }} />
                               <Typography variant="body2" sx={{ pb: 0.5 }}>
-                                Chips Used: {player.chipsUsed}
+                                Chips Used:
                               </Typography>
+                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                {player.chipsUsed &&
+                                  player.chipsUsed.trim() !== '' &&
+                                  player.chipsUsed.split(',').map((chip) => {
+                                    const trimmed = chip.trim();
+                                    const lower = trimmed.toLowerCase();
+                                    if (lower === "double up") {
+                                      return (
+                                        <Chip
+                                          key={trimmed}
+                                          icon={<LooksTwoIcon />}
+                                          label=""
+                                          size="small"
+                                          color="primary"
+                                        />
+                                      );
+                                    } else if (lower === "wildcard") {
+                                      return (
+                                        <Chip
+                                          key={trimmed}
+                                          icon={<ShuffleIcon />}
+                                          label=""
+                                          size="small"
+                                          color="primary"
+                                        />
+                                      );
+                                    } else {
+                                      return (
+                                        <Chip
+                                          key={trimmed}
+                                          label={trimmed}
+                                          size="small"
+                                          color="primary"
+                                        />
+                                      );
+                                    }
+                                  })}
+                              </Box>
                             </Box>
                           </Box>
                         </Collapse>
