@@ -24,16 +24,27 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Alert as MuiAlert,
+  Chip,
 } from '@mui/material';
+import MuiAlert, { AlertProps } from '@mui/material/Alert';
+import { styled, useTheme } from '@mui/material/styles';
+import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import { SnackbarCloseReason } from '@mui/material';
+import LooksTwoIcon from '@mui/icons-material/LooksTwo';
+import ShuffleIcon from '@mui/icons-material/Shuffle';
 
-const Alert = React.forwardRef<HTMLDivElement, any>(function Alert(props, ref) {
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
+
+// We'll update header cell styling to use the theme.
+const StyledHeaderCell = styled(TableCell)(({ theme }) => ({
+  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : '#f5f5f5',
+  color: theme.palette.mode === 'dark' ? theme.palette.common.white : theme.palette.text.primary,
+}));
 
 interface BonusPicksData {
   // Mapping: player name => { bonus category => pick }
@@ -53,6 +64,7 @@ type ViewMode = 'accordion' | 'table';
 
 const AllBonusPicksAllPage = () => {
   const { data: session, status } = useSession();
+  const theme = useTheme();
   const [bonusPicks, setBonusPicks] = useState<BonusPicksData>({});
   const [transformedData, setTransformedData] = useState<CategoryBonusPicks>({});
   const [loading, setLoading] = useState<boolean>(false);
@@ -218,19 +230,26 @@ const AllBonusPicksAllPage = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      {/* Sticky category column */}
                       <TableCell
-                        sx={{
+                        sx={(theme) => ({
                           position: 'sticky',
                           left: 0,
-                          backgroundColor: 'white',
+                          backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : '#f5f5f5',
+                          color: theme.palette.mode === 'dark' ? theme.palette.common.white : theme.palette.text.primary,
                           zIndex: 1,
-                        }}
+                        })}
                       >
                         <strong>Category</strong>
                       </TableCell>
                       {playerList.map((player) => (
-                        <TableCell key={player} align="center">
+                        <TableCell
+                          key={player}
+                          align="center"
+                          sx={(theme) => ({
+                            backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : '#f5f5f5',
+                            color: theme.palette.mode === 'dark' ? theme.palette.common.white : theme.palette.text.primary,
+                          })}
+                        >
                           <strong>{player}</strong>
                         </TableCell>
                       ))}
@@ -240,12 +259,13 @@ const AllBonusPicksAllPage = () => {
                     {Object.entries(transformedData).map(([category, picks]) => (
                       <TableRow key={category}>
                         <TableCell
-                          sx={{
+                          sx={(theme) => ({
                             position: 'sticky',
                             left: 0,
-                            backgroundColor: 'white',
+                            backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : '#f5f5f5',
+                            color: theme.palette.mode === 'dark' ? theme.palette.common.white : theme.palette.text.primary,
                             zIndex: 1,
-                          }}
+                          })}
                         >
                           <strong>{category}</strong>
                         </TableCell>
@@ -263,6 +283,11 @@ const AllBonusPicksAllPage = () => {
           </>
         )}
       </Paper>
+      <Box display="flex" justifyContent="center" mb={2}>
+        <Button variant="outlined" onClick={fetchBonusPicks}>
+          Refresh
+        </Button>
+      </Box>
     </Container>
   );
 };

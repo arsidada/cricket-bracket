@@ -1,20 +1,21 @@
-// app/page.tsx
 'use client';
 
 import React from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { Box, Button, Typography } from '@mui/material';
 import RecentActivity from './components/RecentActivity';
+import { useTheme } from '@mui/material/styles';
 
 const HomePage = () => {
   const { data: session, status } = useSession();
+  const theme = useTheme(); // Access current theme values
 
   if (status === 'loading') {
     return (
       <Box
         sx={{
           minHeight: '100vh',
-          backgroundColor: '#fff',
+          backgroundColor: theme.palette.background.default,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -32,7 +33,7 @@ const HomePage = () => {
       <Box
         sx={{
           minHeight: '100vh',
-          backgroundColor: '#fff',
+          backgroundColor: theme.palette.background.default,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -54,7 +55,7 @@ const HomePage = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: '#fff',
+        backgroundColor: theme.palette.background.default,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

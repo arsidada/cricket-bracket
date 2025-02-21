@@ -32,9 +32,10 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props,
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
-const StyledTableCell = styled(TableCell)({
-  backgroundColor: '#f5f5f5',
-});
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : '#f5f5f5',
+  color: theme.palette.mode === 'dark' ? theme.palette.common.white : theme.palette.text.primary,
+}));
 
 interface Player {
   rank: string;
@@ -64,7 +65,6 @@ const Leaderboard = () => {
     severity: 'success',
   });
 
-  // Use a ref to store previous players snapshot if needed.
   const prevPlayersRef = useRef<Player[]>([]);
 
   const fetchLeaderboardSnapshot = async () => {
