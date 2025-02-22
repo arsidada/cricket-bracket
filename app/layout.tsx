@@ -12,6 +12,7 @@ import Brightness2Icon from '@mui/icons-material/Brightness2';
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
+// Define light and dark themes.
 const lightTheme = createTheme({
   palette: {
     mode: 'light',
@@ -27,31 +28,20 @@ const darkTheme = createTheme({
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  // Use a tri-state for mode: null means not determined yet.
-  const [mode, setMode] = useState<'light' | 'dark' | null>(null);
-
-  useEffect(() => {
-    const storedMode = localStorage.getItem('themeMode') as 'light' | 'dark' | null;
-    setMode(storedMode ? storedMode : 'light');
-  }, []);
-
-  useEffect(() => {
-    if (mode) {
-      localStorage.setItem('themeMode', mode);
+  // Initialize with a lazy initializer.
+  const [mode, setMode] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const storedMode = localStorage.getItem('themeMode');
+      return storedMode === 'dark' ? 'dark' : 'light';
     }
+    return 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('themeMode', mode);
   }, [mode]);
 
-  // Always define an effective mode so hooks are called unconditionally.
-  const effectiveMode = mode ?? 'light';
-  const theme = useMemo(() => (effectiveMode === 'dark' ? darkTheme : lightTheme), [effectiveMode]);
-
-  if (mode === null) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-        Loading theme...
-      </div>
-    );
-  }
+  const theme = useMemo(() => (mode === 'dark' ? darkTheme : lightTheme), [mode]);
 
   return (
     <html lang="en">
@@ -74,11 +64,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ThemeProvider theme={theme}>
             <CssBaseline />
             <NavBar />
-            {/* Dark mode toggle using a Switch with custom icons */}
-            <Box sx={{ position: 'fixed', top: 8, left: 16, zIndex: 1300 }}>
+            {/* Dark mode toggle positioned at top-left */}
+            <Box sx={{ position: 'fixed', top: 16, left: 16, zIndex: 1300 }}>
               <Switch
-                checked={effectiveMode === 'dark'}
-                onChange={() => setMode(effectiveMode === 'light' ? 'dark' : 'light')}
+                checked={mode === 'dark'}
+                onChange={(e) => setMode(e.target.checked ? 'dark' : 'light')}
+                // Always use white icons so they're visible on the black navbar.
                 icon={<WbSunnyIcon sx={{ color: 'white' }} />}
                 checkedIcon={<Brightness2Icon sx={{ color: 'white' }} />}
               />
