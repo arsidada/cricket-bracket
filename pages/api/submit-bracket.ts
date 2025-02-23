@@ -121,14 +121,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Step 5: Append a row to "Links" tab with player's name & EST timestamp
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'Links!A:B',
-      valueInputOption: 'RAW',
-      requestBody: {
-        values: [[name, timestampEST]], // Player Name, Timestamp
-      },
-    });
+    if(!isWildcard) {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+        range: 'Links!A:B',
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [[name, timestampEST]], // Player Name, Timestamp
+        },
+      });
+    }
 
     // --- NEW STEP: Update Bonuses Overview with bonus picks ---
     // Fetch existing bonuses data from "Bonuses Overview" sheet
