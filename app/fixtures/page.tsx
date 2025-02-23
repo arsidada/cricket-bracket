@@ -2,7 +2,7 @@
 'use client';
 
 import { useSession, signIn } from 'next-auth/react';
-import { useEffect, useState, ChangeEvent } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -11,18 +11,39 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  CircularProgress,
+  Skeleton,
+  Alert,
+  Grid,
+  Chip,
   Snackbar,
   Select,
   MenuItem,
+  Tabs,
+  Tab,
   SelectChangeEvent,
-  Alert as MuiAlert,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { styled } from '@mui/system';
-import React from 'react';
+import { styled } from '@mui/material/styles';
 
-// Define a type for the snackbar state.
+// Mapping for team flags (using emoji)
+const teamFlags: { [key: string]: string } = {
+  'New Zealand': '🇳🇿',
+  India: '🇮🇳',
+  Bangladesh: '🇧🇩',
+  Pakistan: '🇵🇰',
+  'South Africa': '🇿🇦',
+  Australia: '🇦🇺',
+  England: '🇬🇧',
+  Afghanistan: '🇦🇫',
+};
+
+// A larger, styled Chip that includes flags
+const BigChip = styled(Chip)(({ theme }) => ({
+  fontSize: '1.2rem',
+  padding: '8px 12px',
+  height: 'auto',
+}));
+
 type SnackbarState = {
   open: boolean;
   message: string;
@@ -39,27 +60,177 @@ interface Fixture {
   rowIndex?: number;
 }
 
-const WinnerTypography = styled(Typography)({
-  color: 'green',
-  fontWeight: 'bold',
-});
+// Admin update component
+const AdminFixtureUpdate = ({
+  fixture,
+  setSnackbar,
+}: {
+  fixture: Fixture;
+  setSnackbar: React.Dispatch<React.SetStateAction<SnackbarState>>;
+}) => {
+  const [newWinner, setNewWinner] = useState<string>(fixture.winner);
+  const [updating, setUpdating] = useState<boolean>(false);
 
-const MuiAlertComponent = React.forwardRef<HTMLDivElement, any>((props, ref) => (
-  <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
-));
-MuiAlertComponent.displayName = 'MuiAlertComponent';
+  const handleChange = (event: SelectChangeEvent<string>) => {
+    setNewWinner(event.target.value);
+  };
+
+  const handleUpdate = async () => {
+    if (newWinner !== fixture.team1 && newWinner !== fixture.team2) {
+      setSnackbar({ open: true, message: 'Please select a valid team', severity: 'error' });
+      return;
+    }
+    setUpdating(true);
+    try {
+      const response = await fetch('/api/update-fixture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: fixture.date,
+          match: fixture.match,
+          newWinner,
+        }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        const lbResponse = await fetch('/api/refresh-leaderboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const lbResult = await lbResponse.json();
+        if (lbResponse.ok) {
+          setSnackbar({ open: true, message: 'Fixture and leaderboard updated successfully!', severity: 'success' });
+        } else {
+          setSnackbar({
+            open: true,
+            message: lbResult.error || 'Fixture updated but leaderboard refresh failed',
+            severity: 'error',
+          });
+        }
+      } else {
+        setSnackbar({ open: true, message: result.error || 'Fixture update failed', severity: 'error' });
+      }
+    } catch (err) {
+      setSnackbar({ open: true, message: 'An error occurred while updating', severity: 'error' });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  return (
+    <Box sx={{ mt: 2, pt: 1, borderTop: '1px solid #ccc' }}>
+      <Typography variant="subtitle2">Admin: Update Fixture Result</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+        <Select value={newWinner} onChange={handleChange} size="small" sx={{ minWidth: 120 }}>
+          <MenuItem value={fixture.team1}>{fixture.team1}</MenuItem>
+          <MenuItem value={fixture.team2}>{fixture.team2}</MenuItem>
+        </Select>
+        <Button variant="contained" color="primary" onClick={handleUpdate} disabled={updating}>
+          {updating ? 'Updating...' : 'Update Fixture'}
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
+// Styled Accordion to give a card-like feel
+const StyledAccordion = styled(Accordion)(({ theme }) => ({
+  boxShadow: theme.shadows[3],
+  borderRadius: theme.spacing(1),
+  marginBottom: theme.spacing(2),
+  '&:before': {
+    display: 'none',
+  },
+}));
+
+// Accordion component for each fixture
+const FixtureAccordion = ({
+  fixture,
+  session,
+  setSnackbar,
+}: {
+  fixture: Fixture;
+  session: any;
+  setSnackbar: React.Dispatch<React.SetStateAction<SnackbarState>>;
+}) => {
+  // Split picks into team-specific arrays
+  const team1Picks = Object.entries(fixture.picks)
+    .filter(([_, pick]) => pick === fixture.team1)
+    .map(([player]) => player);
+
+  const team2Picks = Object.entries(fixture.picks)
+    .filter(([_, pick]) => pick === fixture.team2)
+    .map(([player]) => player);
+
+  return (
+    <StyledAccordion>
+      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+        <Box sx={{ width: '100%', textAlign: 'center' }}>
+          <Typography variant="subtitle1">
+            {fixture.date} – Match {fixture.match}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 1 }}>
+            <BigChip
+              label={`${teamFlags[fixture.team1] || ''} ${fixture.team1}`}
+              color={fixture.team1 === fixture.winner ? 'success' : 'default'}
+            />
+            <BigChip
+              label={`${teamFlags[fixture.team2] || ''} ${fixture.team2}`}
+              color={fixture.team2 === fixture.winner ? 'success' : 'default'}
+            />
+          </Box>
+        </Box>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              {`${teamFlags[fixture.team1] || ''} ${fixture.team1}`} Picks:
+            </Typography>
+            {team1Picks.length > 0 ? (
+              team1Picks.map((player) => (
+                <Typography key={player} variant="body2">
+                  {player}
+                </Typography>
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                No picks yet.
+              </Typography>
+            )}
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              {`${teamFlags[fixture.team2] || ''} ${fixture.team2}`} Picks:
+            </Typography>
+            {team2Picks.length > 0 ? (
+              team2Picks.map((player) => (
+                <Typography key={player} variant="body2">
+                  {player}
+                </Typography>
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                No picks yet.
+              </Typography>
+            )}
+          </Grid>
+        </Grid>
+        {session.user?.email === 'arsalan.rana@gmail.com' && (
+          <AdminFixtureUpdate fixture={fixture} setSnackbar={setSnackbar} />
+        )}
+      </AccordionDetails>
+    </StyledAccordion>
+  );
+};
 
 const Fixtures = () => {
   const { data: session, status } = useSession();
   const [groupStageFixtures, setGroupStageFixtures] = useState<Fixture[]>([]);
-  const [super8Fixtures, setSuper8Fixtures] = useState<Fixture[]>([]);
-  const [playoffFixtures, setPlayoffFixtures] = useState<Fixture[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
+  const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
+  // Since only Group Stage is active, we default to that tab.
+  const [tabIndex, setTabIndex] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,19 +240,7 @@ const Fixtures = () => {
 
         if (response.ok) {
           const groupStageData = transformData(result.groupStage);
-          let super8Data: Fixture[] = [];
-          let playoffData: Fixture[] = [];
-
-          if (result.super8 && !result.super8.errors) {
-            super8Data = transformData(result.super8);
-          }
-          if (result.playoffs && !result.playoffs.errors) {
-            playoffData = transformData(result.playoffs);
-          }
-
           setGroupStageFixtures(groupStageData);
-          setSuper8Fixtures(super8Data);
-          setPlayoffFixtures(playoffData);
         } else {
           setError(result.error || 'An error occurred while fetching data');
         }
@@ -101,13 +260,9 @@ const Fixtures = () => {
 
   if (status === 'loading') {
     return (
-      <Container>
-        <Box display="flex" justifyContent="center" mt={4}>
-          <CircularProgress />
-        </Box>
-        <Typography align="center" color="primary">
-          Loading...
-        </Typography>
+      <Container sx={{ py: 4, textAlign: 'center' }}>
+        <Skeleton variant="rectangular" height={150} sx={{ mb: 2 }} />
+        <Skeleton variant="rectangular" height={150} sx={{ mb: 2 }} />
       </Container>
     );
   }
@@ -127,155 +282,22 @@ const Fixtures = () => {
 
   if (error) {
     return (
-      <Container>
-        <Typography align="center" color="error">
-          Error: {error}
-        </Typography>
+      <Container sx={{ py: 4 }}>
+        <Alert severity="error">Error: {error}</Alert>
       </Container>
     );
   }
 
-  if (groupStageFixtures.length === 0 && super8Fixtures.length === 0 && playoffFixtures.length === 0) {
-    return (
-      <Container>
-        <Typography align="center" color="primary">
-          Loading...
-        </Typography>
-      </Container>
-    );
-  }
-
-  // Admin update component now receives setSnackbar as a prop.
-
-  const AdminFixtureUpdate = ({
-    fixture,
-    setSnackbar,
-  }: {
-    fixture: Fixture;
-    setSnackbar: React.Dispatch<React.SetStateAction<SnackbarState>>;
-  }) => {
-    const [newWinner, setNewWinner] = useState<string>(fixture.winner);
-    const [updating, setUpdating] = useState<boolean>(false);
-  
-    const handleChange = (event: SelectChangeEvent<string>) => {
-      setNewWinner(event.target.value);
-    };
-  
-    const handleUpdate = async () => {
-      // Validate that newWinner is one of the two teams.
-      if (newWinner !== fixture.team1 && newWinner !== fixture.team2) {
-        setSnackbar({ open: true, message: 'Please select a valid team', severity: 'error' });
-        return;
-      }
-      setUpdating(true);
-      try {
-        // First, update the fixture result.
-        const response = await fetch('/api/update-fixture', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            date: fixture.date,
-            match: fixture.match,
-            newWinner,
-          }),
-        });
-        const result = await response.json();
-        if (response.ok) {
-          // On successful fixture update, trigger leaderboard refresh.
-          const lbResponse = await fetch('/api/refresh-leaderboard', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          const lbResult = await lbResponse.json();
-          if (lbResponse.ok) {
-            setSnackbar({ open: true, message: 'Fixture and leaderboard updated successfully!', severity: 'success' });
-          } else {
-            setSnackbar({ open: true, message: lbResult.error || 'Fixture updated but leaderboard refresh failed', severity: 'error' });
-          }
-        } else {
-          setSnackbar({ open: true, message: result.error || 'Fixture update failed', severity: 'error' });
-        }
-      } catch (err) {
-        setSnackbar({ open: true, message: 'An error occurred while updating', severity: 'error' });
-      } finally {
-        setUpdating(false);
-      }
-    };
-  
-    return (
-      <Box sx={{ mt: 2, p: 1, borderTop: '1px solid #ccc' }}>
-        <Typography variant="subtitle2">Admin: Update Fixture Result</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-          <Select
-            value={newWinner}
-            onChange={handleChange}
-            size="small"
-            sx={{ minWidth: 120 }}
-          >
-            <MenuItem value={fixture.team1}>{fixture.team1}</MenuItem>
-            <MenuItem value={fixture.team2}>{fixture.team2}</MenuItem>
-          </Select>
-          <Button variant="contained" color="primary" onClick={handleUpdate} disabled={updating}>
-            {updating ? 'Updating...' : 'Update Fixture'}
-          </Button>
-        </Box>
-      </Box>
-    );
+  // Only show Group Stage fixtures for now.
+  const fixtureCategories: { [key: string]: Fixture[] } = {
+    'Group Stage': groupStageFixtures,
   };
 
-  // Helper: Render a single fixture in an Accordion.
-  const renderFixtureAccordion = (fixture: Fixture, index: number) => {
-    return (
-      <Accordion key={index} sx={{ mb: 2 }}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="subtitle1">
-              {fixture.date} – Match {fixture.match}
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-              {fixture.team1 === fixture.winner ? (
-                <WinnerTypography variant="h6">{fixture.team1}</WinnerTypography>
-              ) : (
-                <Typography variant="h6">{fixture.team1}</Typography>
-              )}
-              {fixture.team2 === fixture.winner ? (
-                <WinnerTypography variant="h6">{fixture.team2}</WinnerTypography>
-              ) : (
-                <Typography variant="h6">{fixture.team2}</Typography>
-              )}
-            </Box>
-          </Box>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box>
-              <Typography variant="subtitle2">Players picking {fixture.team1}:</Typography>
-              {Object.entries(fixture.picks)
-                .filter(([player, pick]) => pick === fixture.team1)
-                .map(([player]) => (
-                  <Typography key={player} variant="body2">
-                    {player}
-                  </Typography>
-                ))}
-            </Box>
-            <Box>
-              <Typography variant="subtitle2">Players picking {fixture.team2}:</Typography>
-              {Object.entries(fixture.picks)
-                .filter(([player, pick]) => pick === fixture.team2)
-                .map(([player]) => (
-                  <Typography key={player} variant="body2">
-                    {player}
-                  </Typography>
-                ))}
-            </Box>
-            {/* Only show the admin update component if the signed-in user is the admin */}
-            {session.user?.email === 'arsalan.rana@gmail.com' && (
-              <AdminFixtureUpdate fixture={fixture} setSnackbar={setSnackbar} />
-            )}
-          </Box>
-        </AccordionDetails>
-      </Accordion>
-    );
+  // If only one category exists, skip rendering tabs.
+  const fixtureTypes = Object.keys(fixtureCategories);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabIndex(newValue);
   };
 
   return (
@@ -283,34 +305,18 @@ const Fixtures = () => {
       <Typography variant="h4" align="center" gutterBottom>
         Fixtures
       </Typography>
-
-      {playoffFixtures.length > 0 && (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Playoffs
-          </Typography>
-          {playoffFixtures.map((fixture, index) => renderFixtureAccordion(fixture, index))}
-        </Box>
+      {fixtureTypes.length > 1 && (
+        <Tabs value={tabIndex} onChange={handleTabChange} centered sx={{ mb: 4 }}>
+          {fixtureTypes.map((type) => (
+            <Tab key={type} label={type} />
+          ))}
+        </Tabs>
       )}
-
-      {super8Fixtures.length > 0 && (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Super 8
-          </Typography>
-          {super8Fixtures.map((fixture, index) => renderFixtureAccordion(fixture, index))}
-        </Box>
-      )}
-
-      {groupStageFixtures.length > 0 && (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Group Stage
-          </Typography>
-          {groupStageFixtures.map((fixture, index) => renderFixtureAccordion(fixture, index))}
-        </Box>
-      )}
-
+      <Box>
+        {fixtureCategories[fixtureTypes[tabIndex]]?.map((fixture, index) => (
+          <FixtureAccordion key={index} fixture={fixture} session={session} setSnackbar={setSnackbar} />
+        ))}
+      </Box>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
@@ -321,17 +327,18 @@ const Fixtures = () => {
         }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-      <MuiAlertComponent
-        onClose={(event: React.SyntheticEvent<any, Event>, reason?: string) => {
-          if (reason !== 'clickaway') {
-            setSnackbar({ ...snackbar, open: false });
-          }
-        }}
-        severity={snackbar.severity}
-        sx={{ width: '100%' }}
-      >
-        {snackbar.message}
-      </MuiAlertComponent>
+        <Alert
+          onClose={(event: React.SyntheticEvent, reason?: string) => {
+            if (reason !== 'clickaway') {
+              setSnackbar({ ...snackbar, open: false });
+            }
+          }}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
       </Snackbar>
     </Container>
   );
@@ -355,7 +362,7 @@ const transformData = (data: any[][] | undefined): Fixture[] => {
   const winnerIndex = header.indexOf('Winner');
 
   if (dateIndex === -1 || matchIndex === -1 || team1Index === -1 || team2Index === -1 || winnerIndex === -1) {
-    throw new Error("Required columns not found");
+    throw new Error('Required columns not found');
   }
 
   let lastCompletedFixtureIndex = -1;
@@ -378,7 +385,7 @@ const transformData = (data: any[][] | undefined): Fixture[] => {
       team2: row[team2Index],
       winner: row[winnerIndex],
       picks: {},
-      rowIndex: i, // Optionally keep track of the row index
+      rowIndex: i,
     };
 
     for (let j = 0; j < header.length; j++) {
