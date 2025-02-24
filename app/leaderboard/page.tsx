@@ -1,3 +1,4 @@
+// app/leaderboard/page.tsx
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -27,6 +28,9 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import LooksTwoIcon from '@mui/icons-material/LooksTwo';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
+import ShareIcon from '@mui/icons-material/Share';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import html2canvas from 'html2canvas';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -66,6 +70,7 @@ const Leaderboard = () => {
   });
 
   const prevPlayersRef = useRef<Player[]>([]);
+  const leaderboardRef = useRef<HTMLDivElement>(null);
 
   const fetchLeaderboardSnapshot = async () => {
     try {
@@ -120,6 +125,86 @@ const Leaderboard = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
+  // Helper: Clone the leaderboard element and remove unwanted styles
+  const captureLeaderboardImage = async (): Promise<HTMLCanvasElement | null> => {
+    if (!leaderboardRef.current) return null;
+    const originalNode = leaderboardRef.current;
+    // Clone the node deeply.
+    const clonedNode = originalNode.cloneNode(true) as HTMLElement;
+    // Remove box-shadow and force background white on the clone and its descendants.
+    const allElements = clonedNode.querySelectorAll('*');
+    allElements.forEach((el) => {
+      (el as HTMLElement).style.boxShadow = 'none';
+      (el as HTMLElement).style.background = '#fff';
+    });
+    clonedNode.style.boxShadow = 'none';
+    clonedNode.style.background = '#fff';
+    // Create a temporary container off-screen.
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.top = '-9999px';
+    tempContainer.style.left = '-9999px';
+    tempContainer.appendChild(clonedNode);
+    document.body.appendChild(tempContainer);
+    try {
+      const canvas = await html2canvas(clonedNode, { backgroundColor: '#fff' });
+      return canvas;
+    } catch (error) {
+      throw error;
+    } finally {
+      document.body.removeChild(tempContainer);
+    }
+  };
+
+  // Capture leaderboard image and copy it to the clipboard.
+  const handleCopyImage = async () => {
+    try {
+      const canvas = await captureLeaderboardImage();
+      if (!canvas) return;
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+            setSnackbar({ open: true, message: 'Image copied to clipboard', severity: 'success' });
+          } catch (err) {
+            setSnackbar({ open: true, message: 'Failed to copy image', severity: 'error' });
+          }
+        }
+      });
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Failed to capture image', severity: 'error' });
+    }
+  };
+
+  // Capture leaderboard image and share it using the Web Share API.
+  const handleShareImage = async () => {
+    try {
+      const canvas = await captureLeaderboardImage();
+      if (!canvas) return;
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          const file = new File([blob], 'leaderboard.png', { type: blob.type });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: 'Leaderboard',
+                text: 'Check out this leaderboard!',
+              });
+              setSnackbar({ open: true, message: 'Image shared successfully', severity: 'success' });
+            } catch (err) {
+              setSnackbar({ open: true, message: 'Failed to share image', severity: 'error' });
+            }
+          } else {
+            setSnackbar({ open: true, message: 'Sharing image not supported on this device. Try copying the image instead.', severity: 'error' });
+          }
+        }
+      });
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Failed to capture image', severity: 'error' });
+    }
+  };
+
   if (status === 'loading') {
     return (
       <Container maxWidth="sm" sx={{ pt: 4 }}>
@@ -154,122 +239,136 @@ const Leaderboard = () => {
             No leaderboard data available.
           </Typography>
         ) : (
-          <TableContainer component={Paper} elevation={3}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell />
-                  <StyledTableCell>
-                    <Typography variant="h6">Rank</Typography>
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    <Typography variant="h6">Player</Typography>
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    <Typography variant="h6">Total Points</Typography>
-                  </StyledTableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {players.map((player) => (
-                  <React.Fragment key={player.name}>
-                    <TableRow onClick={() => handleRowClick(player.name)}>
-                      <TableCell>
-                        <IconButton size="small">
-                          {openRows[player.name] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                        </IconButton>
-                      </TableCell>
-                      <TableCell>
-                        {player.rank}
-                        {deltaMap[player.name] === 'up' && (
-                          <ArrowUpwardIcon style={{ color: 'green', verticalAlign: 'middle', marginLeft: 4 }} fontSize="small" />
-                        )}
-                        {deltaMap[player.name] === 'down' && (
-                          <ArrowDownwardIcon style={{ color: 'red', verticalAlign: 'middle', marginLeft: 4 }} fontSize="small" />
-                        )}
-                      </TableCell>
-                      <TableCell>{player.name}</TableCell>
-                      <TableCell>{player.totalPoints}</TableCell>
-                    </TableRow>
+          <>
+            {/* Share and copy buttons */}
+            <Box display="flex" justifyContent="center" gap={2} mb={2}>
+              <IconButton onClick={handleShareImage} color="primary">
+                <ShareIcon />
+              </IconButton>
+              <IconButton onClick={handleCopyImage} color="primary">
+                <ContentCopyIcon />
+              </IconButton>
+            </Box>
+            {/* Leaderboard Table wrapped with a ref */}
+            <Box ref={leaderboardRef}>
+              <TableContainer component={Paper} elevation={3}>
+                <Table>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={4} style={{ paddingBottom: 0, paddingTop: 0 }}>
-                        <Collapse in={openRows[player.name]} timeout="auto" unmountOnExit>
-                          <Box margin={1}>
-                            <Typography variant="h6" gutterBottom>
-                              Points Breakdown
-                            </Typography>
-                            <Box sx={{ borderTop: '1px solid #ccc', mt: 1 }}>
-                              <Typography variant="body2" sx={{ pt: 1 }}>
-                                Groups: {player.groupPoints}
-                              </Typography>
-                              <Divider sx={{ my: 1 }} />
-                              <Typography variant="body2">
-                                Playoffs: {player.playoffPoints}
-                              </Typography>
-                              <Divider sx={{ my: 1 }} />
-                              <Typography variant="body2">
-                                Bonuses: {player.bonusPoints}
-                              </Typography>
-                              <Divider sx={{ my: 1 }} />
-                              <Typography variant="body2" sx={{ pb: 1 }}>
-                                Time: {player.timestamp}
-                              </Typography>
-                              <Divider sx={{ my: 1 }} />
-                              <Typography variant="body2" sx={{ pb: 0.5 }}>
-                                Penalty: {player.penalty}
-                              </Typography>
-                              <Divider sx={{ my: 1 }} />
-                              <Typography variant="body2" sx={{ pb: 0.5 }}>
-                                Chips Used:
-                              </Typography>
-                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                {player.chipsUsed &&
-                                  player.chipsUsed.trim() !== '' &&
-                                  player.chipsUsed.split(',').map((chip) => {
-                                    const trimmed = chip.trim();
-                                    const lower = trimmed.toLowerCase();
-                                    if (lower === "double up") {
-                                      return (
-                                        <Chip
-                                          key={trimmed}
-                                          icon={<LooksTwoIcon />}
-                                          label=""
-                                          size="small"
-                                          color="primary"
-                                        />
-                                      );
-                                    } else if (lower === "wildcard") {
-                                      return (
-                                        <Chip
-                                          key={trimmed}
-                                          icon={<ShuffleIcon />}
-                                          label=""
-                                          size="small"
-                                          color="primary"
-                                        />
-                                      );
-                                    } else {
-                                      return (
-                                        <Chip
-                                          key={trimmed}
-                                          label={trimmed}
-                                          size="small"
-                                          color="primary"
-                                        />
-                                      );
-                                    }
-                                  })}
-                              </Box>
-                            </Box>
-                          </Box>
-                        </Collapse>
-                      </TableCell>
+                      <StyledTableCell />
+                      <StyledTableCell>
+                        <Typography variant="h6">Rank</Typography>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <Typography variant="h6">Player</Typography>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <Typography variant="h6">Total Points</Typography>
+                      </StyledTableCell>
                     </TableRow>
-                  </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {players.map((player) => (
+                      <React.Fragment key={player.name}>
+                        <TableRow onClick={() => handleRowClick(player.name)}>
+                          <TableCell>
+                            <IconButton size="small">
+                              {openRows[player.name] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                            </IconButton>
+                          </TableCell>
+                          <TableCell>
+                            {player.rank}
+                            {deltaMap[player.name] === 'up' && (
+                              <ArrowUpwardIcon style={{ color: 'green', verticalAlign: 'middle', marginLeft: 4 }} fontSize="small" />
+                            )}
+                            {deltaMap[player.name] === 'down' && (
+                              <ArrowDownwardIcon style={{ color: 'red', verticalAlign: 'middle', marginLeft: 4 }} fontSize="small" />
+                            )}
+                          </TableCell>
+                          <TableCell>{player.name}</TableCell>
+                          <TableCell>{player.totalPoints}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell colSpan={4} style={{ paddingBottom: 0, paddingTop: 0 }}>
+                            <Collapse in={openRows[player.name]} timeout="auto" unmountOnExit>
+                              <Box margin={1}>
+                                <Typography variant="h6" gutterBottom>
+                                  Points Breakdown
+                                </Typography>
+                                <Box sx={{ borderTop: '1px solid #ccc', mt: 1 }}>
+                                  <Typography variant="body2" sx={{ pt: 1 }}>
+                                    Groups: {player.groupPoints}
+                                  </Typography>
+                                  <Divider sx={{ my: 1 }} />
+                                  <Typography variant="body2">
+                                    Playoffs: {player.playoffPoints}
+                                  </Typography>
+                                  <Divider sx={{ my: 1 }} />
+                                  <Typography variant="body2">
+                                    Bonuses: {player.bonusPoints}
+                                  </Typography>
+                                  <Divider sx={{ my: 1 }} />
+                                  <Typography variant="body2" sx={{ pb: 1 }}>
+                                    Time: {player.timestamp}
+                                  </Typography>
+                                  <Divider sx={{ my: 1 }} />
+                                  <Typography variant="body2" sx={{ pb: 0.5 }}>
+                                    Penalty: {player.penalty}
+                                  </Typography>
+                                  <Divider sx={{ my: 1 }} />
+                                  <Typography variant="body2" sx={{ pb: 0.5 }}>
+                                    Chips Used:
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                    {player.chipsUsed &&
+                                      player.chipsUsed.trim() !== '' &&
+                                      player.chipsUsed.split(',').map((chip) => {
+                                        const trimmed = chip.trim();
+                                        const lower = trimmed.toLowerCase();
+                                        if (lower === 'double up') {
+                                          return (
+                                            <Chip
+                                              key={trimmed}
+                                              icon={<LooksTwoIcon />}
+                                              label=""
+                                              size="small"
+                                              color="primary"
+                                            />
+                                          );
+                                        } else if (lower === 'wildcard') {
+                                          return (
+                                            <Chip
+                                              key={trimmed}
+                                              icon={<ShuffleIcon />}
+                                              label=""
+                                              size="small"
+                                              color="primary"
+                                            />
+                                          );
+                                        } else {
+                                          return (
+                                            <Chip
+                                              key={trimmed}
+                                              label={trimmed}
+                                              size="small"
+                                              color="primary"
+                                            />
+                                          );
+                                        }
+                                      })}
+                                  </Box>
+                                </Box>
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          </>
         )}
       </Box>
       <Snackbar
@@ -278,9 +377,9 @@ const Leaderboard = () => {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <MuiAlert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
-        </MuiAlert>
+        </Alert>
       </Snackbar>
     </Container>
   );
