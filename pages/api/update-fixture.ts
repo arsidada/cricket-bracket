@@ -21,7 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { date, match, newWinner } = req.body;
-  if (!date || !match || !newWinner) {
+  // newWinner may be one of the teams or "DRAW"
+  if (!date || !match || newWinner === undefined || newWinner === null) {
     return res.status(400).json({ error: 'Missing required fields: date, match, or newWinner' });
   }
 

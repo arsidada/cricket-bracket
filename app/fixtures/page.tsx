@@ -60,7 +60,12 @@ interface Fixture {
   rowIndex?: number;
 }
 
-// Admin update component
+/**
+ * AdminFixtureUpdate
+ *
+ * This component allows the admin to update the fixture result.
+ * It now includes a "DRAW" option in addition to the two teams.
+ */
 const AdminFixtureUpdate = ({
   fixture,
   setSnackbar,
@@ -68,6 +73,7 @@ const AdminFixtureUpdate = ({
   fixture: Fixture;
   setSnackbar: React.Dispatch<React.SetStateAction<SnackbarState>>;
 }) => {
+  // Initialize newWinner with the current fixture winner (or empty if not set)
   const [newWinner, setNewWinner] = useState<string>(fixture.winner);
   const [updating, setUpdating] = useState<boolean>(false);
 
@@ -76,8 +82,9 @@ const AdminFixtureUpdate = ({
   };
 
   const handleUpdate = async () => {
-    if (newWinner !== fixture.team1 && newWinner !== fixture.team2) {
-      setSnackbar({ open: true, message: 'Please select a valid team', severity: 'error' });
+    // Validate that newWinner is either team1, team2, or "DRAW"
+    if (newWinner !== fixture.team1 && newWinner !== fixture.team2 && newWinner !== 'DRAW') {
+      setSnackbar({ open: true, message: 'Please select a valid team or "DRAW"', severity: 'error' });
       return;
     }
     setUpdating(true);
@@ -93,6 +100,7 @@ const AdminFixtureUpdate = ({
       });
       const result = await response.json();
       if (response.ok) {
+        // Trigger leaderboard refresh.
         const lbResponse = await fetch('/api/refresh-leaderboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -101,11 +109,7 @@ const AdminFixtureUpdate = ({
         if (lbResponse.ok) {
           setSnackbar({ open: true, message: 'Fixture and leaderboard updated successfully!', severity: 'success' });
         } else {
-          setSnackbar({
-            open: true,
-            message: lbResult.error || 'Fixture updated but leaderboard refresh failed',
-            severity: 'error',
-          });
+          setSnackbar({ open: true, message: lbResult.error || 'Fixture updated but leaderboard refresh failed', severity: 'error' });
         }
       } else {
         setSnackbar({ open: true, message: result.error || 'Fixture update failed', severity: 'error' });
@@ -124,6 +128,7 @@ const AdminFixtureUpdate = ({
         <Select value={newWinner} onChange={handleChange} size="small" sx={{ minWidth: 120 }}>
           <MenuItem value={fixture.team1}>{fixture.team1}</MenuItem>
           <MenuItem value={fixture.team2}>{fixture.team2}</MenuItem>
+          <MenuItem value="DRAW">DRAW</MenuItem>
         </Select>
         <Button variant="contained" color="primary" onClick={handleUpdate} disabled={updating}>
           {updating ? 'Updating...' : 'Update Fixture'}
@@ -172,11 +177,23 @@ const FixtureAccordion = ({
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 1 }}>
             <BigChip
               label={`${teamFlags[fixture.team1] || ''} ${fixture.team1}`}
-              color={fixture.team1 === fixture.winner ? 'success' : 'default'}
+              color={
+                fixture.winner === 'DRAW'
+                  ? 'warning'
+                  : fixture.team1 === fixture.winner
+                  ? 'success'
+                  : 'default'
+              }
             />
             <BigChip
               label={`${teamFlags[fixture.team2] || ''} ${fixture.team2}`}
-              color={fixture.team2 === fixture.winner ? 'success' : 'default'}
+              color={
+                fixture.winner === 'DRAW'
+                  ? 'warning'
+                  : fixture.team2 === fixture.winner
+                  ? 'success'
+                  : 'default'
+              }
             />
           </Box>
         </Box>
