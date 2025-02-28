@@ -13,9 +13,8 @@ const deadlineDT = DateTime.fromISO("2025-02-19T03:59:00", { zone: "America/New_
 /**
  * Leaderboard evaluation function.
  * 
- * The doubleUpChips mapping is used for Group Stage processing:
- * For each player, if they used a Double Up chip on a given match and their pick was correct,
- * they receive double the points.
+ * For Group Stage processing: if a player used a Double Up chip on a match and their pick was correct,
+ * they receive double the points. In the case of a DRAW, the base points are 5, or 10 if a Double Up chip was used.
  * 
  * Additionally, for Group Stage, if a player's submission (from submissionTimeMap)
  * is later than the deadline, then for the first N matches (where 
@@ -78,13 +77,19 @@ function calculateLeaderboard(
             };
           }
           if (winner === "DRAW") {
-            players[playerName].totalPoints += 5;
+            // Base points for a draw is 5.
+            let pointsAwarded = 5;
+            // If in Group Stage and player used Double Up on this match, double the draw points.
+            if (stage === "Group Stage" && doubleUpMap && doubleUpMap[playerName] === matchNumber) {
+              pointsAwarded = 10;
+            }
+            players[playerName].totalPoints += pointsAwarded;
             if (stage === "Group Stage") {
-              players[playerName].groupPoints += 5;
+              players[playerName].groupPoints += pointsAwarded;
             } else if (stage === "Super 8") {
-              players[playerName].super8Points += 5;
+              players[playerName].super8Points += pointsAwarded;
             } else if (stage === "Playoffs Semi-finals" || stage === "Playoffs Final") {
-              players[playerName].playoffPoints += 5;
+              players[playerName].playoffPoints += pointsAwarded;
             }
           } else if (row[j] === winner) {
             if (stage === "Group Stage") {
