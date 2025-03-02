@@ -163,7 +163,7 @@ const getFixtureStartTime = (fixture: Fixture) => {
 
 const BracketSubmission = () => {
   const { data: session } = useSession();
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(2);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Group stage picks state
