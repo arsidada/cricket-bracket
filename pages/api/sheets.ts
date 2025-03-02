@@ -1,3 +1,4 @@
+// pages/api/sheets.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
 import { google } from 'googleapis';
@@ -50,18 +51,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Fetch sheets with error handling
-    const [groupStage, super8, playoffs, links, bonuses] = await Promise.all([
+    const [groupStage, super8, playoffs, links, bonuses, finals] = await Promise.all([
       fetchSheetData('Predictions Overview!A1:Z1000'),
       fetchSheetData('Super8!A1:Z1000'),
       fetchSheetData('Playoffs!A1:Z1000'),
       fetchSheetData('Links!A1:C1000'),
       fetchSheetData('Bonuses Overview!A1:Z1000'),
+      fetchSheetData('Finals!A1:Z1000'),
     ]);
 
     return res.status(200).json({
       groupStage,
       super8,
       playoffs,
+      finals,
       links,
       bonuses,
     });

@@ -43,6 +43,7 @@ interface Fixture {
   venue: string;
 }
 
+// Group Stage fixtures (read-only; already completed)
 const fixtures: Fixture[] = [
   { date: "19 February", match: 1, team1: "Pakistan", team2: "New Zealand", aiPrediction: "Pakistan", venue: "National Stadium, Karachi 🇵🇰" },
   { date: "20 February", match: 2, team1: "Bangladesh", team2: "India", aiPrediction: "India", venue: "Dubai International Cricket Stadium, Dubai 🇦🇪" },
@@ -56,6 +57,38 @@ const fixtures: Fixture[] = [
   { date: "28 February", match: 10, team1: "Afghanistan", team2: "Australia", aiPrediction: "Australia", venue: "Gaddafi Stadium, Lahore 🇵🇰" },
   { date: "1 March", match: 11, team1: "South Africa", team2: "England", aiPrediction: "England", venue: "National Stadium, Karachi 🇵🇰" },
   { date: "2 March", match: 12, team1: "New Zealand", team2: "India", aiPrediction: "India", venue: "Dubai International Cricket Stadium, Dubai 🇦🇪" }
+];
+
+// Playoffs (Semi-finals) fixtures
+const playoffsFixtures: Fixture[] = [
+  {
+    date: "4 March",
+    match: 13,
+    team1: "India",
+    team2: "Australia",
+    aiPrediction: "India",
+    venue: "Dubai International Cricket Stadium, Dubai",
+  },
+  {
+    date: "5 March",
+    match: 14,
+    team1: "South Africa",
+    team2: "New Zealand",
+    aiPrediction: "South Africa",
+    venue: "Gaddafi Stadium, Lahore",
+  },
+];
+
+// Finals fixtures – initially not available (empty teams)
+const finalsFixtures: Fixture[] = [
+  {
+    date: "9 March",
+    match: 15,
+    team1: "",
+    team2: "",
+    aiPrediction: "",
+    venue: "",
+  },
 ];
 
 const bonusQuestions = [
@@ -123,7 +156,7 @@ const getFixtureStartTime = (fixture: Fixture) => {
   const dt = DateTime.fromFormat(
     `${fixture.date} 2025 04:00`, 
     'd MMMM yyyy HH:mm',
-    { zone: 'America/New_York' }  // Explicitly set Eastern Time
+    { zone: 'America/New_York' }
   );
   return dt.toJSDate();
 };
@@ -133,16 +166,18 @@ const BracketSubmission = () => {
   const [tabValue, setTabValue] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // State for picks that the user is currently working on
+  // Group stage picks state
   const [predictions, setPredictions] = useState<{ [match: number]: string }>({});
+  // Playoffs picks state
+  const [playoffsPredictions, setPlayoffsPredictions] = useState<{ [match: number]: string }>({});
+  // Finals picks state
+  const [finalsPredictions, setFinalsPredictions] = useState<{ [match: number]: string }>({});
   const [detailsOpen, setDetailsOpen] = useState<{ [match: number]: boolean }>({});
   const [bonusAnswers, setBonusAnswers] = useState<{ [key: string]: string }>({});
 
-  // NEW: A flag that indicates whether the user has already submitted (finalized) their bracket.
+  // NEW: A flag that indicates whether the user has already submitted (finalized) their group stage bracket.
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
-  // State for showing the deadline popup
   const [showDeadlinePopup, setShowDeadlinePopup] = useState(false);
-  // Snackbar state for notifications
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
     open: false,
     message: '',
@@ -150,14 +185,10 @@ const BracketSubmission = () => {
   });
 
   // --- CHIP STATES ---
-  // Which chip menu (if any) is currently expanded ("doubleUp" or "wildcard")
   const [selectedChipMenu, setSelectedChipMenu] = useState<"doubleUp" | "wildcard" | null>(null);
-  // The selected fixture for each chip (fixture number)
   const [selectedDoubleUp, setSelectedDoubleUp] = useState<number | null>(null);
   const [selectedWildcard, setSelectedWildcard] = useState<number | null>(null);
-  // Dialog state for confirming chip activation
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  // Store user's already activated chips fetched from backend
   const [userChips, setUserChips] = useState<{ doubleUp: number | null; wildcard: number | null }>({
     doubleUp: null,
     wildcard: null
@@ -171,14 +202,20 @@ const BracketSubmission = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
-  // Define the bracket submission deadline: 3:59 AM Feb 19, 2025 (adjust timezone if necessary)
-  const deadline = new Date("2025-02-19T03:59:00");
-  const now = new Date();
-  const isPastDeadline = now > deadline;
-  // The bracket is locked only if it's past deadline and the user has already finalized a submission.
-  const locked = isPastDeadline && alreadySubmitted;
+  // Deadlines for each bracket type
+  const groupStageDeadline = new Date("2025-02-19T03:59:00");
+  const playoffsDeadline = new Date("2025-03-04T03:59:00");
+  const finalsDeadline = new Date("2025-03-09T03:59:00");
 
-  // Fetch bracket data on mount
+  const now = new Date();
+  const isGroupStagePastDeadline = now > groupStageDeadline;
+  const isPlayoffsPastDeadline = now > playoffsDeadline;
+  const isFinalsPastDeadline = now > finalsDeadline;
+
+  // For group stage we only lock if the user already finalized their submission.
+  const locked = isGroupStagePastDeadline && alreadySubmitted;
+
+  // Fetch existing group stage bracket picks on mount
   useEffect(() => {
     const fetchExistingPicks = async () => {
       if (!session?.user?.name) return;
@@ -187,7 +224,6 @@ const BracketSubmission = () => {
         const response = await fetch(`/api/get-bracket?name=${encodeURIComponent(session.user.name)}`);
         const data = await response.json();
         if (response.ok) {
-          // Only update if the user hasn't already started working on picks
           if (Object.keys(predictions).length === 0 && data.picks && Object.keys(data.picks).length > 0) {
             setAlreadySubmitted(true);
             setPredictions(data.picks);
@@ -200,13 +236,28 @@ const BracketSubmission = () => {
         setIsLoading(false);
       }
     };
-
     fetchExistingPicks();
-    // We intentionally leave out `predictions` from the dependency array so that this
-    // effect runs only when the session changes.
   }, [session]);
 
-  // Fetch user's chip usage from the backend (using our get-user-chips endpoint)
+  // NEW: Fetch existing playoff and finals picks on mount from the new endpoint
+  useEffect(() => {
+    const fetchPlayoffsFinalsPicks = async () => {
+      if (!session?.user?.name) return;
+      try {
+        const response = await fetch(`/api/get-bracket-playoffs?name=${encodeURIComponent(session.user.name)}`);
+        const data = await response.json();
+        if (response.ok) {
+          setPlayoffsPredictions(data.playoffsPicks || {});
+          setFinalsPredictions(data.finalsPicks || {});
+        }
+      } catch (error) {
+        console.error("Error fetching playoff and finals picks:", error);
+      }
+    };
+    fetchPlayoffsFinalsPicks();
+  }, [session]);
+
+  // Fetch user's chip usage from the backend
   useEffect(() => {
     const fetchUserChips = async () => {
       if (!session?.user?.name) return;
@@ -223,7 +274,6 @@ const BracketSubmission = () => {
         console.error("Error fetching user chips:", error);
       }
     };
-
     fetchUserChips();
   }, [session]);
 
@@ -232,9 +282,24 @@ const BracketSubmission = () => {
   const availableFixtures = fixtures.filter(fixture => getFixtureStartTime(fixture) > nowEastern);
 
   const handleSelection = (match: number, team: string) => {
-    // Do not allow changing the pick if submission is locked.
     if (locked) return;
     setPredictions((prev) => ({
+      ...prev,
+      [match]: team,
+    }));
+  };
+
+  const handlePlayoffsSelection = (match: number, team: string) => {
+    if (isPlayoffsPastDeadline) return;
+    setPlayoffsPredictions((prev) => ({
+      ...prev,
+      [match]: team,
+    }));
+  };
+
+  const handleFinalsSelection = (match: number, team: string) => {
+    if (isFinalsPastDeadline) return;
+    setFinalsPredictions((prev) => ({
       ...prev,
       [match]: team,
     }));
@@ -251,7 +316,7 @@ const BracketSubmission = () => {
     setTabValue(newValue);
   };
 
-  // Function that handles the actual submission API call for bracket picks.
+  // Submission functions for each bracket type
   const doSubmit = async () => {
     setIsSubmitting(true);
     try {
@@ -265,10 +330,8 @@ const BracketSubmission = () => {
           bonusAnswers: bonusAnswers,
         }),
       });
-
       if (response.ok) {
         showSnackbar("Your bracket has been submitted successfully!", "success");
-        // Mark that the user has now finalized their submission.
         setAlreadySubmitted(true);
       } else {
         showSnackbar("Failed to submit your bracket. Please try again.", "error");
@@ -280,37 +343,106 @@ const BracketSubmission = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // First, check that fixture picks and bonus answers are complete.
-    if (Object.keys(predictions).length !== fixtures.length) {
-      showSnackbar("Please predict the winner for all matches before submitting.", "error");
-      return;
-    }
-    for (const question of bonusQuestions) {
-      if (!bonusAnswers[question] || bonusAnswers[question].trim() === "") {
-        showSnackbar(`Please answer the bonus question: "${question}"`, "error");
-        return;
-      }
-    }
-
-    if (isPastDeadline) {
-      if (alreadySubmitted) {
-        // Already submitted and now locked—do not allow changes.
-        showSnackbar("Bracket submission is locked. You cannot modify your submission.", "error");
-        return;
+  const doSubmitPlayoffs = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/submit-playoffs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: session?.user?.name,
+          picks: playoffsPredictions,
+        }),
+      });
+      if (response.ok) {
+        showSnackbar("Your playoffs bracket has been submitted successfully!", "success");
       } else {
-        // User has not finalized a submission even though it's past the deadline.
-        // Show the popup warning about the penalty.
-        setShowDeadlinePopup(true);
-        return;
+        showSnackbar("Failed to submit your playoffs bracket. Please try again.", "error");
       }
+    } catch (error) {
+      showSnackbar("An error occurred while submitting playoffs bracket. Please try again.", "error");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // If not past deadline, proceed normally.
-    doSubmit();
   };
 
-  // Handlers for the deadline popup dialog.
+  const doSubmitFinals = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/submit-finals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: session?.user?.name,
+          picks: finalsPredictions,
+        }),
+      });
+      if (response.ok) {
+        showSnackbar("Your finals bracket has been submitted successfully!", "success");
+      } else {
+        showSnackbar("Failed to submit your finals bracket. Please try again.", "error");
+      }
+    } catch (error) {
+      showSnackbar("An error occurred while submitting finals bracket. Please try again.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (tabValue === 0 || tabValue === 1) {
+      // Group Stage & Bonus picks submission
+      if (Object.keys(predictions).length !== fixtures.length) {
+        showSnackbar("Please predict the winner for all matches before submitting.", "error");
+        return;
+      }
+      for (const question of bonusQuestions) {
+        if (!bonusAnswers[question] || bonusAnswers[question].trim() === "") {
+          showSnackbar(`Please answer the bonus question: "${question}"`, "error");
+          return;
+        }
+      }
+      if (isGroupStagePastDeadline) {
+        if (alreadySubmitted) {
+          showSnackbar("Group stage bracket submission is locked. You cannot modify your submission.", "error");
+          return;
+        } else {
+          setShowDeadlinePopup(true);
+          return;
+        }
+      }
+      doSubmit();
+    } else if (tabValue === 2) {
+      // Playoffs submission
+      if (Object.keys(playoffsPredictions).length !== playoffsFixtures.length) {
+        showSnackbar("Please predict the winner for all playoffs matches before submitting.", "error");
+        return;
+      }
+      if (isPlayoffsPastDeadline) {
+        showSnackbar("Playoffs submission is locked. You cannot modify your submission.", "error");
+        return;
+      }
+      doSubmitPlayoffs();
+    } else if (tabValue === 3) {
+      // Finals submission
+      if (!finalsFixtures[0].team1 || !finalsFixtures[0].team2) {
+        showSnackbar("Finals are not available yet.", "error");
+        return;
+      }
+      if (!finalsPredictions[finalsFixtures[0].match]) {
+        showSnackbar("Please predict the winner for the finals match before submitting.", "error");
+        return;
+      }
+      if (isFinalsPastDeadline) {
+        showSnackbar("Finals submission is locked. You cannot modify your submission.", "error");
+        return;
+      }
+      doSubmitFinals();
+    }
+  };
+
   const handlePopupContinue = () => {
     setShowDeadlinePopup(false);
     doSubmit();
@@ -320,7 +452,6 @@ const BracketSubmission = () => {
     setShowDeadlinePopup(false);
   };
 
-  // --- CHIP UI HANDLERS ---
   const handleChipMenuToggle = (chip: "doubleUp" | "wildcard") => {
     if (selectedChipMenu === chip) {
       setSelectedChipMenu(null);
@@ -329,7 +460,6 @@ const BracketSubmission = () => {
     }
   };
 
-  // Called when the user clicks the "Apply Chip" button.
   const handleApplyChip = () => {
     setConfirmDialogOpen(true);
   };
@@ -342,14 +472,11 @@ const BracketSubmission = () => {
     setConfirmDialogOpen(false);
   
     if (selectedChipMenu === "wildcard" && selectedWildcard) {
-      // Find the fixture details for the selected wildcard fixture.
       const fixture = fixtures.find(f => f.match === selectedWildcard);
       if (!fixture) {
         showSnackbar("Invalid fixture selection.", "error");
         return;
       }
-      
-      // Determine the current pick and swap it.
       const currentPick = predictions[fixture.match];
       let newPick: string;
       if (currentPick === fixture.team1) {
@@ -357,16 +484,12 @@ const BracketSubmission = () => {
       } else if (currentPick === fixture.team2) {
         newPick = fixture.team1;
       } else {
-        // If no pick exists yet, you could choose a default or prompt the user.
         newPick = fixture.team2;
       }
-      
-      // Update the picks object.
       const updatedPicks = { ...predictions, [fixture.match]: newPick };
       setPredictions(updatedPicks);
       
       try {
-        // Submit the updated bracket with the wildcard flag.
         const bracketResponse = await fetch('/api/submit-bracket', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -375,7 +498,7 @@ const BracketSubmission = () => {
             name: session?.user?.name,
             picks: updatedPicks,
             bonusAnswers: bonusAnswers,
-            isWildcard: true, // This flag tells the API not to log this activity.
+            isWildcard: true,
           }),
         });
         
@@ -384,7 +507,6 @@ const BracketSubmission = () => {
           return;
         }
         
-        // Record the wildcard chip usage.
         const chipResponse = await fetch('/api/submit-chips', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -401,17 +523,13 @@ const BracketSubmission = () => {
         }
         
         showSnackbar("Wildcard applied! Your prediction has been swapped.", "success");
-        
-        // Update local chip state.
         setUserChips((prev) => ({ ...prev, wildcard: fixture.match }));
-        // Clear wildcard selection.
         setSelectedChipMenu(null);
         setSelectedWildcard(null);
       } catch (error) {
         showSnackbar("An error occurred while applying the wildcard. Please try again.", "error");
       }
     } else if (selectedChipMenu === "doubleUp" && selectedDoubleUp) {
-      // Handle the double up chip in the usual way.
       let chipData: any = { doubleUp: selectedDoubleUp };
       try {
         const response = await fetch('/api/submit-chips', {
@@ -450,13 +568,19 @@ const BracketSubmission = () => {
     );
   }
 
-  // Determine the selected fixture details for the active chip menu.
   let chipFixture: Fixture | undefined;
   if (selectedChipMenu === "doubleUp" && selectedDoubleUp) {
     chipFixture = fixtures.find(f => f.match === selectedDoubleUp);
   } else if (selectedChipMenu === "wildcard" && selectedWildcard) {
     chipFixture = fixtures.find(f => f.match === selectedWildcard);
   }
+
+  // Helper to set the FAB button label based on the active tab.
+  const getSubmitButtonLabel = () => {
+    if (tabValue === 0 || tabValue === 1) return "Submit Bracket";
+    if (tabValue === 2) return "Submit Playoffs";
+    if (tabValue === 3) return "Submit Finals";
+  };
 
   return (
     <Container maxWidth="sm" sx={{ pt: '10px' }}>
@@ -469,7 +593,7 @@ const BracketSubmission = () => {
         </Typography>
         {locked && (
           <Typography variant="body2" color="error">
-            Bracket submission is locked as you already submitted your bracket and the deadline has passed.
+            Group stage bracket submission is locked as the deadline has passed.
           </Typography>
         )}
       </Box>
@@ -580,13 +704,17 @@ const BracketSubmission = () => {
         </DialogActions>
       </Dialog>
 
-      {/* --- EXISTING TABS FOR BRACKET SUBMISSION --- */}
+      {/* --- TABS FOR BRACKET SUBMISSION --- */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="Bracket Submission Tabs">
           <Tab label="Fixture Picks" {...a11yProps(0)} />
           <Tab label="Bonus Picks" {...a11yProps(1)} />
+          <Tab label="Playoffs" {...a11yProps(2)} />
+          <Tab label="Finals" {...a11yProps(3)} />
         </Tabs>
       </Box>
+
+      {/* Group Stage Tab */}
       <TabPanel value={tabValue} index={0}>
         {fixtures.map((fixture) => (
           <Paper key={fixture.match} sx={{ p: 2, my: 2, textAlign: 'center', borderRadius: 2 }}>
@@ -640,6 +768,8 @@ const BracketSubmission = () => {
           </Paper>
         ))}
       </TabPanel>
+
+      {/* Bonus Picks Tab */}
       <TabPanel value={tabValue} index={1}>
         <Box my={4}>
           <Typography variant="h5" gutterBottom>
@@ -667,11 +797,109 @@ const BracketSubmission = () => {
         </Box>
       </TabPanel>
 
+      {/* Playoffs Tab */}
+      <TabPanel value={tabValue} index={2}>
+        {playoffsFixtures.map((fixture) => (
+          <Paper key={fixture.match} sx={{ p: 2, my: 2, textAlign: 'center', borderRadius: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Match {fixture.match} - {fixture.date}
+            </Typography>
+            <Box display="flex" justifyContent="center" gap={2}>
+              <Button
+                variant={playoffsPredictions[fixture.match] === fixture.team1 ? "contained" : "outlined"}
+                onClick={() => handlePlayoffsSelection(fixture.match, fixture.team1)}
+                disabled={isPlayoffsPastDeadline}
+              >
+                {fixture.team1}
+              </Button>
+              <Button
+                variant={playoffsPredictions[fixture.match] === fixture.team2 ? "contained" : "outlined"}
+                onClick={() => handlePlayoffsSelection(fixture.match, fixture.team2)}
+                disabled={isPlayoffsPastDeadline}
+              >
+                {fixture.team2}
+              </Button>
+            </Box>
+            <Button
+              variant="text"
+              color="secondary"
+              size="small"
+              onClick={() => toggleDetails(fixture.match)}
+              endIcon={detailsOpen[fixture.match] ? <ExpandLess /> : <ExpandMore />}
+              sx={{ mt: 1 }}
+            >
+              Details
+            </Button>
+            <Collapse in={detailsOpen[fixture.match]}>
+              <Box mt={2} p={2} bgcolor="#f5f5f5" borderRadius={2}>
+                <Typography variant="body2">
+                  <strong>✨ AI Prediction:</strong> {fixture.aiPrediction}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>📍 Venue:</strong> {fixture.venue}
+                </Typography>
+              </Box>
+            </Collapse>
+          </Paper>
+        ))}
+      </TabPanel>
+
+      {/* Finals Tab */}
+      <TabPanel value={tabValue} index={3}>
+        {(!finalsFixtures[0].team1 || !finalsFixtures[0].team2) ? (
+          <Typography variant="body1">Finals are not available yet.</Typography>
+        ) : (
+          finalsFixtures.map((fixture) => (
+            <Paper key={fixture.match} sx={{ p: 2, my: 2, textAlign: 'center', borderRadius: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Match {fixture.match} - {fixture.date}
+              </Typography>
+              <Box display="flex" justifyContent="center" gap={2}>
+                <Button
+                  variant={finalsPredictions[fixture.match] === fixture.team1 ? "contained" : "outlined"}
+                  onClick={() => handleFinalsSelection(fixture.match, fixture.team1)}
+                  disabled={isFinalsPastDeadline}
+                >
+                  {fixture.team1}
+                </Button>
+                <Button
+                  variant={finalsPredictions[fixture.match] === fixture.team2 ? "contained" : "outlined"}
+                  onClick={() => handleFinalsSelection(fixture.match, fixture.team2)}
+                  disabled={isFinalsPastDeadline}
+                >
+                  {fixture.team2}
+                </Button>
+              </Box>
+              <Button
+                variant="text"
+                color="secondary"
+                size="small"
+                onClick={() => toggleDetails(fixture.match)}
+                endIcon={detailsOpen[fixture.match] ? <ExpandLess /> : <ExpandMore />}
+                sx={{ mt: 1 }}
+              >
+                Details
+              </Button>
+              <Collapse in={detailsOpen[fixture.match]}>
+                <Box mt={2} p={2} bgcolor="#f5f5f5" borderRadius={2}>
+                  <Typography variant="body2">
+                    <strong>✨ AI Prediction:</strong> {fixture.aiPrediction}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>📍 Venue:</strong> {fixture.venue}
+                  </Typography>
+                </Box>
+              </Collapse>
+            </Paper>
+          ))
+        )}
+      </TabPanel>
+
       <Fab
         variant="extended"
         color="primary"
         onClick={handleSubmit}
-        disabled={isSubmitting || locked}
+        disabled={isSubmitting || (locked && (tabValue === 0 || tabValue === 1))}
         sx={{
           position: 'fixed',
           bottom: 16,
@@ -684,7 +912,7 @@ const BracketSubmission = () => {
         }}
       >
         {isSubmitting ? <CircularProgress size={24} color="inherit" /> : <SendIcon sx={{ mr: 1 }} />}
-        Submit
+        {getSubmitButtonLabel()}
       </Fab>
 
       <Snackbar
@@ -719,4 +947,3 @@ const BracketSubmission = () => {
 };
 
 export default BracketSubmission;
-

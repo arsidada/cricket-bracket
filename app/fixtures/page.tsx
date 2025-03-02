@@ -1,4 +1,3 @@
-// app/fixtures/page.tsx
 'use client';
 
 import { useSession, signIn } from 'next-auth/react';
@@ -18,12 +17,11 @@ import {
   Snackbar,
   Select,
   MenuItem,
-  Tabs,
-  Tab,
-  SelectChangeEvent,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { styled } from '@mui/material/styles';
+import { DateTime } from 'luxon';
+import { SelectChangeEvent } from '@mui/material';
 
 // Mapping for team flags (using emoji)
 const teamFlags: { [key: string]: string } = {
@@ -64,7 +62,6 @@ interface Fixture {
  * AdminFixtureUpdate
  *
  * This component allows the admin to update the fixture result.
- * It now includes a "DRAW" option in addition to the two teams.
  */
 const AdminFixtureUpdate = ({
   fixture,
@@ -73,7 +70,6 @@ const AdminFixtureUpdate = ({
   fixture: Fixture;
   setSnackbar: React.Dispatch<React.SetStateAction<SnackbarState>>;
 }) => {
-  // Initialize newWinner with the current fixture winner (or empty if not set)
   const [newWinner, setNewWinner] = useState<string>(fixture.winner);
   const [updating, setUpdating] = useState<boolean>(false);
 
@@ -82,7 +78,6 @@ const AdminFixtureUpdate = ({
   };
 
   const handleUpdate = async () => {
-    // Validate that newWinner is either team1, team2, or "DRAW"
     if (newWinner !== fixture.team1 && newWinner !== fixture.team2 && newWinner !== 'DRAW') {
       setSnackbar({ open: true, message: 'Please select a valid team or "DRAW"', severity: 'error' });
       return;
@@ -100,7 +95,6 @@ const AdminFixtureUpdate = ({
       });
       const result = await response.json();
       if (response.ok) {
-        // Trigger leaderboard refresh.
         const lbResponse = await fetch('/api/refresh-leaderboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -138,14 +132,12 @@ const AdminFixtureUpdate = ({
   );
 };
 
-// Styled Accordion to give a card-like feel
+// Styled Accordion for fixture cards
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   boxShadow: theme.shadows[3],
   borderRadius: theme.spacing(1),
   marginBottom: theme.spacing(2),
-  '&:before': {
-    display: 'none',
-  },
+  '&:before': { display: 'none' },
 }));
 
 // Accordion component for each fixture
@@ -158,11 +150,9 @@ const FixtureAccordion = ({
   session: any;
   setSnackbar: React.Dispatch<React.SetStateAction<SnackbarState>>;
 }) => {
-  // Split picks into team-specific arrays
   const team1Picks = Object.entries(fixture.picks)
     .filter(([_, pick]) => pick === fixture.team1)
     .map(([player]) => player);
-
   const team2Picks = Object.entries(fixture.picks)
     .filter(([_, pick]) => pick === fixture.team2)
     .map(([player]) => player);
@@ -241,23 +231,66 @@ const FixtureAccordion = ({
   );
 };
 
+// Generic function to transform sheet data into Fixture objects.
+const transformData = (data: any[][] | undefined): Fixture[] => {
+  if (!data || data.length === 0) return [];
+  const header = data[0];
+  const fixtures: Fixture[] = [];
+  const dateIndex = header.indexOf('Date');
+  const matchIndex = header.indexOf('Match');
+  const team1Index = header.indexOf('Team 1');
+  const team2Index = header.indexOf('Team 2');
+  const winnerIndex = header.indexOf('Winner');
+  if ([dateIndex, matchIndex, team1Index, team2Index, winnerIndex].includes(-1)) {
+    throw new Error('Required columns not found');
+  }
+  let lastCompletedFixtureIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[dateIndex] === 'Date' && row[matchIndex] === 'Match') continue;
+    if (row[winnerIndex]) lastCompletedFixtureIndex = i;
+    const fixture: Fixture = {
+      date: row[dateIndex],
+      match: row[matchIndex],
+      team1: row[team1Index],
+      team2: row[team2Index],
+      winner: row[winnerIndex],
+      picks: {},
+      rowIndex: i,
+    };
+    for (let j = 0; j < header.length; j++) {
+      const columnName = header[j];
+      if (![header[dateIndex], header[matchIndex], header[team1Index], header[team2Index], 'Winner', 'POTM'].includes(columnName)) {
+        fixture.picks[columnName] = row[j];
+      }
+    }
+    fixtures.push(fixture);
+  }
+  let fixturesToShow =
+    lastCompletedFixtureIndex + 1 < fixtures.length ? lastCompletedFixtureIndex + 1 : fixtures.length;
+  if (fixturesToShow === 0) {
+    fixturesToShow = lastCompletedFixtureIndex + 2 < fixtures.length ? lastCompletedFixtureIndex + 2 : fixtures.length;
+  }
+  return fixtures.slice(0, fixturesToShow).reverse();
+};
+
 const Fixtures = () => {
   const { data: session, status } = useSession();
   const [groupStageFixtures, setGroupStageFixtures] = useState<Fixture[]>([]);
+  const [playoffsFixtures, setPlayoffsFixtures] = useState<Fixture[]>([]);
+  const [finalsFixtures, setFinalsFixtures] = useState<Fixture[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
-  // Since only Group Stage is active, we default to that tab.
-  const [tabIndex, setTabIndex] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch('/api/sheets', { cache: 'no-store' });
         const result = await response.json();
-
         if (response.ok) {
-          const groupStageData = transformData(result.groupStage);
-          setGroupStageFixtures(groupStageData);
+          setGroupStageFixtures(transformData(result.groupStage));
+          setPlayoffsFixtures(transformData(result.playoffs));
+          setFinalsFixtures(transformData(result.finals));
         } else {
           setError(result.error || 'An error occurred while fetching data');
         }
@@ -305,35 +338,48 @@ const Fixtures = () => {
     );
   }
 
-  // Only show Group Stage fixtures for now.
-  const fixtureCategories: { [key: string]: Fixture[] } = {
-    'Group Stage': groupStageFixtures,
-  };
-
-  // If only one category exists, skip rendering tabs.
-  const fixtureTypes = Object.keys(fixtureCategories);
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabIndex(newValue);
-  };
-
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" align="center" gutterBottom>
         Fixtures
       </Typography>
-      {fixtureTypes.length > 1 && (
-        <Tabs value={tabIndex} onChange={handleTabChange} centered sx={{ mb: 4 }}>
-          {fixtureTypes.map((type) => (
-            <Tab key={type} label={type} />
+
+      {/* Finals Section - only show if finals fixture exists and both teams are set */}
+      {finalsFixtures.length > 0 && finalsFixtures[0].team1 && finalsFixtures[0].team2 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            Finals
+          </Typography>
+          {finalsFixtures.map((fixture, index) => (
+            <FixtureAccordion key={`finals-${index}`} fixture={fixture} session={session} setSnackbar={setSnackbar} />
           ))}
-        </Tabs>
+        </Box>
       )}
-      <Box>
-        {fixtureCategories[fixtureTypes[tabIndex]]?.map((fixture, index) => (
-          <FixtureAccordion key={index} fixture={fixture} session={session} setSnackbar={setSnackbar} />
-        ))}
-      </Box>
+
+      {/* Playoffs Section */}
+      {playoffsFixtures.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            Playoffs
+          </Typography>
+          {playoffsFixtures.map((fixture, index) => (
+            <FixtureAccordion key={`playoffs-${index}`} fixture={fixture} session={session} setSnackbar={setSnackbar} />
+          ))}
+        </Box>
+      )}
+
+      {/* Group Stage Section */}
+      {groupStageFixtures.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            Group Stage
+          </Typography>
+          {groupStageFixtures.map((fixture, index) => (
+            <FixtureAccordion key={`group-${index}`} fixture={fixture} session={session} setSnackbar={setSnackbar} />
+          ))}
+        </Box>
+      )}
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
@@ -362,62 +408,3 @@ const Fixtures = () => {
 };
 
 export default Fixtures;
-
-// Helper function to transform sheet data into Fixture objects.
-const transformData = (data: any[][] | undefined): Fixture[] => {
-  if (!data || data.length === 0) {
-    return [];
-  }
-
-  const header = data[0];
-  const fixtures: Fixture[] = [];
-
-  const dateIndex = header.indexOf('Date');
-  const matchIndex = header.indexOf('Match');
-  const team1Index = header.indexOf('Team 1');
-  const team2Index = header.indexOf('Team 2');
-  const winnerIndex = header.indexOf('Winner');
-
-  if (dateIndex === -1 || matchIndex === -1 || team1Index === -1 || team2Index === -1 || winnerIndex === -1) {
-    throw new Error('Required columns not found');
-  }
-
-  let lastCompletedFixtureIndex = -1;
-
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    if (row[dateIndex] === 'Date' && row[matchIndex] === 'Match') {
-      continue; // Skip duplicate header rows
-    }
-    const winner = row[winnerIndex];
-
-    if (winner) {
-      lastCompletedFixtureIndex = i;
-    }
-
-    const fixture: Fixture = {
-      date: row[dateIndex],
-      match: row[matchIndex],
-      team1: row[team1Index],
-      team2: row[team2Index],
-      winner: row[winnerIndex],
-      picks: {},
-      rowIndex: i,
-    };
-
-    for (let j = 0; j < header.length; j++) {
-      const columnName = header[j];
-      if (![header[dateIndex], header[matchIndex], header[team1Index], header[team2Index], 'Winner', 'POTM'].includes(columnName)) {
-        fixture.picks[columnName] = row[j];
-      }
-    }
-
-    fixtures.push(fixture);
-  }
-
-  let fixturesToShow = lastCompletedFixtureIndex + 1 < fixtures.length ? lastCompletedFixtureIndex + 1 : fixtures.length;
-  if (fixturesToShow === 0) {
-    fixturesToShow = lastCompletedFixtureIndex + 1 < fixtures.length ? lastCompletedFixtureIndex + 2 : fixtures.length;
-  }
-  return fixtures.slice(0, fixturesToShow).reverse();
-};
