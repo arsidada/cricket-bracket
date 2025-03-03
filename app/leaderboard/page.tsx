@@ -1,4 +1,3 @@
-// app/leaderboard/page.tsx
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -129,9 +128,7 @@ const Leaderboard = () => {
   const captureLeaderboardImage = async (): Promise<HTMLCanvasElement | null> => {
     if (!leaderboardRef.current) return null;
     const originalNode = leaderboardRef.current;
-    // Clone the node deeply.
     const clonedNode = originalNode.cloneNode(true) as HTMLElement;
-    // Remove box-shadow and force background white on the clone and its descendants.
     const allElements = clonedNode.querySelectorAll('*');
     allElements.forEach((el) => {
       (el as HTMLElement).style.boxShadow = 'none';
@@ -139,7 +136,6 @@ const Leaderboard = () => {
     });
     clonedNode.style.boxShadow = 'none';
     clonedNode.style.background = '#fff';
-    // Create a temporary container off-screen.
     const tempContainer = document.createElement('div');
     tempContainer.style.position = 'absolute';
     tempContainer.style.top = '-9999px';
@@ -156,7 +152,6 @@ const Leaderboard = () => {
     }
   };
 
-  // Capture leaderboard image and copy it to the clipboard.
   const handleCopyImage = async () => {
     try {
       const canvas = await captureLeaderboardImage();
@@ -176,7 +171,6 @@ const Leaderboard = () => {
     }
   };
 
-  // Capture leaderboard image and share it using the Web Share API.
   const handleShareImage = async () => {
     try {
       const canvas = await captureLeaderboardImage();
@@ -263,6 +257,9 @@ const Leaderboard = () => {
                         <Typography variant="h6">Player</Typography>
                       </StyledTableCell>
                       <StyledTableCell>
+                        <Typography variant="h6">Bonus Points</Typography>
+                      </StyledTableCell>
+                      <StyledTableCell>
                         <Typography variant="h6">Total Points</Typography>
                       </StyledTableCell>
                     </TableRow>
@@ -286,10 +283,11 @@ const Leaderboard = () => {
                             )}
                           </TableCell>
                           <TableCell>{player.name}</TableCell>
+                          <TableCell>{player.bonusPoints}</TableCell>
                           <TableCell>{player.totalPoints}</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell colSpan={4} style={{ paddingBottom: 0, paddingTop: 0 }}>
+                          <TableCell colSpan={5} style={{ paddingBottom: 0, paddingTop: 0 }}>
                             <Collapse in={openRows[player.name]} timeout="auto" unmountOnExit>
                               <Box margin={1}>
                                 <Typography variant="h6" gutterBottom>
