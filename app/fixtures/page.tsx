@@ -56,7 +56,7 @@ interface Fixture {
   winner: string;
   picks: { [key: string]: string };
   rowIndex?: number;
-}
+};
 
 /**
  * AdminFixtureUpdate
@@ -338,6 +338,11 @@ const Fixtures = () => {
     );
   }
 
+  // Determine current Eastern time and the playoffs start time (March 5th, 4:00AM ET)
+  const nowEastern = DateTime.now().setZone('America/New_York');
+  const playoffsStart = DateTime.fromISO('2025-03-05T04:00:00', { zone: 'America/New_York' });
+  const showPlayoffs = nowEastern >= playoffsStart;
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" align="center" gutterBottom>
@@ -356,8 +361,8 @@ const Fixtures = () => {
         </Box>
       )}
 
-      {/* Playoffs Section */}
-      {playoffsFixtures.length > 0 && (
+      {/* Playoffs Section - only show if the current time is past the playoffs start time */}
+      {showPlayoffs && playoffsFixtures.length > 0 && (
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
             Playoffs
