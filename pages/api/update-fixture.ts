@@ -26,6 +26,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Missing required fields: date, match, or newWinner' });
   }
 
+  // Parse match number (assuming match is sent as a number or numeric string)
+  const matchNumber = Number(match);
+  if (isNaN(matchNumber)) {
+    return res.status(400).json({ error: 'Invalid match number' });
+  }
+
+  // Determine which bracket the fixture belongs to:
+  // Group Stage: match 1-12, Playoffs: match 13-14, Finals: match 15+
+  let bracketType: 'group' | 'playoffs' | 'finals' = 'group';
+  if (matchNumber >= 13 && matchNumber < 15) {
+    bracketType = 'playoffs';
+  } else if (matchNumber >= 15) {
+    bracketType = 'finals';
+  }
+
+  // Set sheet range and offset based on bracket type.
+  let range = '';
+  let offset = 0;
+  if (bracketType === 'group') {
+    range = 'Predictions Overview!A1:Z1000';
+  } else if (bracketType === 'playoffs') {
+    range = 'Playoffs!A1:Z1000';
+    offset = 12; // Using the same offset as in submission logic.
+  } else if (bracketType === 'finals') {
+    range = 'Finals!A1:Z1000';
+    offset = 0;
+  }
+
   try {
     // Authenticate with Google Sheets API.
     const auth = new google.auth.JWT({
@@ -37,10 +65,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
 
-    // Fetch the current sheet data from "Predictions Overview"
+    // Fetch the current sheet data from the appropriate tab.
     const sheetResponse = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Predictions Overview!A1:Z1000',
+      range,
     });
     const data = sheetResponse.data.values;
     if (!data || data.length === 0) {
@@ -56,32 +84,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Required columns not found' });
     }
 
-    // Locate the fixture row by matching the provided date and match.
-    let rowFound = false;
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (row[dateIndex] === date && row[matchIndex] === match) {
-        data[i][winnerIndex] = newWinner;
-        rowFound = true;
-        break;
-      }
+    // Calculate the expected row index in the sheet.
+    // For group and finals, we assume row number equals the match number.
+    // For playoffs, apply the offset (e.g. match 13 should be at row index 13 - 11 = 2).
+    const targetRowIndex = matchNumber - offset;
+
+    if (targetRowIndex < 1 || targetRowIndex >= data.length) {
+      return res.status(404).json({ error: 'Fixture row not found in the sheet' });
     }
 
-    if (!rowFound) {
-      return res.status(404).json({ error: 'Fixture not found' });
+    const row = data[targetRowIndex];
+    // (Optional) You can check if the date and match columns in the row match the provided values.
+    if (row[dateIndex] !== date || row[matchIndex] !== match.toString()) {
+      // You might choose to continue, or return an error.
+      console.warn('Mismatch in fixture data; proceeding with update.');
     }
+
+    // Update the Winner column for the target row.
+    data[targetRowIndex][winnerIndex] = newWinner;
 
     // Update the sheet with the new fixture result.
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Predictions Overview!A1:Z1000',
+      range,
       valueInputOption: 'RAW',
       requestBody: { values: data },
     });
 
     // Log the update activity.
     const timestampEST = DateTime.now().setZone('America/New_York').toFormat('yyyy-MM-dd HH:mm:ss');
-    const adminName = session.user?.name || session.user?.email; // Use full name if available
+    const adminName = session.user?.name || session.user?.email;
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: 'Activity Log!A:D',

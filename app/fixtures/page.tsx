@@ -338,9 +338,9 @@ const Fixtures = () => {
     );
   }
 
-  // Determine current Eastern time and the playoffs start time (March 5th, 4:00AM ET)
+  // Determine current Eastern time and the playoffs start time (March 4th, 4:00AM ET)
   const nowEastern = DateTime.now().setZone('America/New_York');
-  const playoffsStart = DateTime.fromISO('2025-03-05T04:00:00', { zone: 'America/New_York' });
+  const playoffsStart = DateTime.fromISO('2025-03-04T04:00:00', { zone: 'America/New_York' });
   const showPlayoffs = nowEastern >= playoffsStart;
 
   return (

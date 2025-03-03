@@ -7,7 +7,7 @@ import { DateTime } from 'luxon';
 
 const DeadlineCountdown = () => {
   // Set the submission deadline; adjust the zone if needed.
-  const deadline = DateTime.fromISO('2025-02-19T03:59:00', { zone: 'America/New_York' });
+  const deadline = DateTime.fromISO('2025-03-04T03:59:00', { zone: 'America/New_York' });
   // Initialize timeLeft as null so we can show a skeleton until it's computed.
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
   const [deadlinePassed, setDeadlinePassed] = useState<boolean>(false);
@@ -55,7 +55,7 @@ const DeadlineCountdown = () => {
             // Show a skeleton placeholder covering the entire message area until timeLeft is computed.
             <Skeleton variant="text" width="100%" height={24} />
           ) : (
-            `Deadline to submit your brackets: ${timeLeft}`
+            `Deadline to submit your playoffs bracket: ${timeLeft}`
           )}
         </Typography>
       )}
