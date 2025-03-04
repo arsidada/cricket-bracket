@@ -28,7 +28,7 @@ const RulesPage = () => {
         </Typography>
 
         <Typography variant="h5" color="secondary" mt={4} gutterBottom>
-          2. Semi-Finals and Finals (3:59AM EST March 4th for Semi-Finals, 3:59AM EST March 6th for Finals):
+          2. Semi-Finals and Finals (3:59AM EST March 4th for Semi-Finals, 3:59AM EST March 9th for Finals):
         </Typography>
         <Typography variant="body1" gutterBottom>
           • Correct Semi-Final Winner: <strong>160 points/# of winners </strong>
