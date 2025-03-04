@@ -203,11 +203,11 @@ const BracketSubmission = () => {
   };
 
   // Deadlines for each bracket type
-  const groupStageDeadline = new Date("2025-02-19T03:59:00");
-  const playoffsDeadline = new Date("2025-03-04T03:59:00");
-  const finalsDeadline = new Date("2025-03-09T03:59:00");
+  const groupStageDeadline = DateTime.fromISO('2025-02-19T03:59:00', { zone: 'America/New_York' });
+  const playoffsDeadline = DateTime.fromISO('2025-03-04T03:59:00', { zone: 'America/New_York' });
+  const finalsDeadline = DateTime.fromISO('2025-03-09T03:59:00:00', { zone: 'America/New_York' });
 
-  const now = new Date();
+  const now = DateTime.now().setZone('America/New_York');
   const isGroupStagePastDeadline = now > groupStageDeadline;
   const isPlayoffsPastDeadline = now > playoffsDeadline;
   const isFinalsPastDeadline = now > finalsDeadline;
