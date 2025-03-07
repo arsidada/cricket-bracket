@@ -79,7 +79,7 @@ const playoffsFixtures: Fixture[] = [
   },
 ];
 
-// Finals fixtures – initially not available (empty teams)
+// Finals fixtures
 const finalsFixtures: Fixture[] = [
   {
     date: "9 March",
@@ -591,11 +591,6 @@ const BracketSubmission = () => {
         <Typography variant="body1" color="textSecondary">
           Make your selections in the tabs below and then submit your bracket.
         </Typography>
-        {locked && (
-          <Typography variant="body2" color="error">
-            Group stage bracket submission is locked as the deadline has passed.
-          </Typography>
-        )}
       </Box>
 
       {/* --- CHIP ACTIVATION UI --- */}
