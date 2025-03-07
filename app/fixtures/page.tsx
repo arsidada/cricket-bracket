@@ -341,7 +341,9 @@ const Fixtures = () => {
   // Determine current Eastern time and the playoffs start time (March 4th, 4:00AM ET)
   const nowEastern = DateTime.now().setZone('America/New_York');
   const playoffsStart = DateTime.fromISO('2025-03-04T04:00:00', { zone: 'America/New_York' });
+  const finalsStart = DateTime.fromISO('2025-03-09T04:00:00', { zone: 'America/New_York' });
   const showPlayoffs = nowEastern >= playoffsStart;
+  const showFinals = nowEastern >= finalsStart;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -350,7 +352,7 @@ const Fixtures = () => {
       </Typography>
 
       {/* Finals Section - only show if finals fixture exists and both teams are set */}
-      {finalsFixtures.length > 0 && finalsFixtures[0].team1 && finalsFixtures[0].team2 && (
+      {showFinals && finalsFixtures.length > 0 && finalsFixtures[0].team1 && finalsFixtures[0].team2 && (
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
             Finals

@@ -91,8 +91,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Step 3: Update each row with the user's picks (using match number as the row index)
     const updatedData = [...data];
+    const offset = 14;
     for (const matchNumber in picks) {
-      const rowIndex = parseInt(matchNumber, 10);
+      const numericMatch = parseInt(matchNumber, 10);
+      const rowIndex = numericMatch - offset;
       if (!updatedData[rowIndex]) updatedData[rowIndex] = [];
       updatedData[rowIndex][userColumnIndex] = picks[matchNumber];
     }

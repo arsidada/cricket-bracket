@@ -84,10 +84,10 @@ const finalsFixtures: Fixture[] = [
   {
     date: "9 March",
     match: 15,
-    team1: "",
-    team2: "",
-    aiPrediction: "",
-    venue: "",
+    team1: "India",
+    team2: "New Zealand",
+    aiPrediction: "India",
+    venue: "Dubai International Cricket Stadium, Dubai",
   },
 ];
 
@@ -163,7 +163,7 @@ const getFixtureStartTime = (fixture: Fixture) => {
 
 const BracketSubmission = () => {
   const { data: session } = useSession();
-  const [tabValue, setTabValue] = useState(2);
+  const [tabValue, setTabValue] = useState(3);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Group stage picks state
