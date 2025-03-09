@@ -51,7 +51,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     offset = 12; // Using the same offset as in submission logic.
   } else if (bracketType === 'finals') {
     range = 'Finals!A1:Z1000';
-    offset = 0;
+    // For finals, assume the fixture is stored in the first row after the header.
+    // So, set offset = matchNumber - 1 to always target row index 1.
+    offset = matchNumber - 1;
   }
 
   try {
@@ -85,8 +87,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Calculate the expected row index in the sheet.
-    // For group and finals, we assume row number equals the match number.
-    // For playoffs, apply the offset (e.g. match 13 should be at row index 13 - 11 = 2).
+    // For group and finals, we assume row number equals the match number (with finals adjusted by offset).
+    // For playoffs, apply the offset.
     const targetRowIndex = matchNumber - offset;
 
     if (targetRowIndex < 1 || targetRowIndex >= data.length) {
@@ -94,9 +96,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const row = data[targetRowIndex];
-    // (Optional) You can check if the date and match columns in the row match the provided values.
-    if (row[dateIndex] !== date || row[matchIndex] !== match.toString()) {
-      // You might choose to continue, or return an error.
+    // Use trimmed values for comparison.
+    if (row[dateIndex].trim() !== date.trim() || row[matchIndex].toString().trim() !== match.toString().trim()) {
       console.warn('Mismatch in fixture data; proceeding with update.');
     }
 
@@ -122,8 +123,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         values: [[timestampEST, 'FIXTURE_UPDATED', adminName, `Match ${match} Winner: ${newWinner}`]],
       },
     });
-
-    // (Optional) Trigger leaderboard evaluation here if desired.
 
     return res.status(200).json({ message: 'Fixture updated successfully' });
   } catch (error) {
