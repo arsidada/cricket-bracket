@@ -58,14 +58,15 @@ const hardcodedBonusPoints: { [player: string]: number } = {
  * 
  * For Super 8: a fixed point is awarded per correct pick.
  * 
- * For Playoffs and Finals: Each fixture has a pool (160 points for playoffs semi‑finals and 260 for finals)
+ * For Playoffs and Finals: Each fixture has a pool (160 points for playoffs semi‑finals, 260 for finals)
  * that is split equally (using Math.floor) among the players who picked the winning team.
  */
 function calculateLeaderboard(
   groupStageData: any[][],
   super8Data: any[][],
   playoffsData: any[][],
-  bonusesData: any[][], // bonuses sheet is ignored in favor of the hardcoded mapping.
+  finalsData: any[][],
+  bonusesData: any[][], // ignored in favor of hardcoded bonus map.
   linksData: any[][],
   doubleUpChips: { [player: string]: number },
   submissionTimeMap: { [player: string]: DateTime }
@@ -99,7 +100,7 @@ function calculateLeaderboard(
 
   const processPredictions = (
     data: any[][],
-    pointsPerCorrectPick: number, // used only for Group Stage and Super8
+    pointsPerCorrectPick: number, // used for Group Stage and Super8 (ignored for playoffs/finals)
     stage: string,
     doubleUpMap?: { [player: string]: number }
   ) => {
@@ -117,8 +118,15 @@ function calculateLeaderboard(
       if (!winner) continue;
       const matchNumber = i; // using row index as match number
 
-      if (stage === "Playoffs Semi-finals" || stage === "Playoffs Final") {
-        const pool = stage === "Playoffs Semi-finals" ? 160 : 260;
+      if (stage === "Playoffs Semi-finals" || stage === "Playoffs Final" || stage === "Finals") {
+        let pool = 0;
+        if (stage === "Playoffs Semi-finals") {
+          pool = 160;
+        } else if (stage === "Playoffs Final") {
+          pool = 160; // If you have separate pool for playoffs final, adjust here.
+        } else if (stage === "Finals") {
+          pool = 260;
+        }
         // Count the number of players who picked the winner.
         let correctCount = 0;
         for (let j = 0; j < header.length; j++) {
@@ -220,6 +228,13 @@ function calculateLeaderboard(
     console.log("Playoffs data is empty; skipping.");
   }
 
+  // Process Finals predictions.
+  if (finalsData && finalsData.length > 0) {
+    processPredictions(finalsData, 0, "Finals");
+  } else {
+    console.log("Finals data is empty; skipping.");
+  }
+
   // Build submission time mapping from linksData.
   if (linksData && linksData.length > 0) {
     const linksHeader = linksData[0];
@@ -294,14 +309,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       groupStageRes,
       super8Res,
       playoffsRes,
-      bonusesRes, // will not be used.
+      finalsRes,
+      bonusesRes, // ignored
       linksRes,
       chipsRes
     ] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Predictions Overview!A1:Z1000' }),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Super8!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Playoffs!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
-      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Bonuses Overview!A1:Z1000' }), // ignored
+      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Finals!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Bonuses Overview!A1:Z1000' }),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Links!A:B' }),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Chips!A:C' }).catch(() => ({ data: { values: [] } }))
     ]);
@@ -309,6 +326,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const groupStageData = groupStageRes.data.values || [];
     const super8Data = super8Res.data.values || [];
     const playoffsData = playoffsRes.data.values || [];
+    const finalsData = finalsRes.data.values || [];
     const bonusesData: any[] = []; // Explicitly typed as any[]
     const linksData = linksRes.data.values || [];
     const chipsRows = chipsRes.data.values || [];
@@ -365,6 +383,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       groupStageData,
       super8Data,
       playoffsData,
+      finalsData,
       bonusesData,
       linksData,
       doubleUpChips,
