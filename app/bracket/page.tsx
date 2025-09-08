@@ -62,7 +62,7 @@ const fixtures: Fixture[] = [
 // Super 4 fixtures
 const playoffsFixtures: Fixture[] = [
   {
-    date: "21 September",
+    date: "20 September",
     match: 13,
     team1: "TBD",
     team2: "TBD",
@@ -70,7 +70,7 @@ const playoffsFixtures: Fixture[] = [
     venue: "Dubai International Stadium, Dubai 🇦🇪",
   },
   {
-    date: "22 September",
+    date: "21 September",
     match: 14,
     team1: "TBD",
     team2: "TBD",
@@ -78,7 +78,7 @@ const playoffsFixtures: Fixture[] = [
     venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪",
   },
   {
-    date: "23 September",
+    date: "22 September",
     match: 15,
     team1: "TBD",
     team2: "TBD",
@@ -90,7 +90,7 @@ const playoffsFixtures: Fixture[] = [
 // Finals fixtures
 const finalsFixtures: Fixture[] = [
   {
-    date: "24 September",
+    date: "28 September",
     match: 16,
     team1: "TBD",
     team2: "TBD",
@@ -208,9 +208,9 @@ const BracketSubmission = () => {
   };
 
   // Deadlines for each bracket type
-  const groupStageDeadline = DateTime.fromISO('2025-09-09T18:30:00', { zone: 'America/New_York' });
-  const playoffsDeadline = DateTime.fromISO('2025-09-21T18:30:00', { zone: 'America/New_York' });
-  const finalsDeadline = DateTime.fromISO('2025-09-24T18:30:00', { zone: 'America/New_York' });
+  const groupStageDeadline = DateTime.fromISO('2025-09-09T10:30:00', { zone: 'America/New_York' });
+  const playoffsDeadline = DateTime.fromISO('2025-09-20T10:30:00', { zone: 'America/New_York' });
+  const finalsDeadline = DateTime.fromISO('2025-09-28T10:30:00', { zone: 'America/New_York' });
 
   const now = DateTime.now().setZone('America/New_York');
   const isGroupStagePastDeadline = now > groupStageDeadline;

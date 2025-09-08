@@ -8,7 +8,7 @@ import { DateTime } from 'luxon';
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
 // Set the deadline as a Luxon DateTime in EST.
-const deadlineDT = DateTime.fromISO("2025-09-09T18:30:00", { zone: "America/New_York" });
+const deadlineDT = DateTime.fromISO("2025-09-09T10:30:00", { zone: "America/New_York" });
 
 // Hardcoded bonus points mapping for Asia Cup 2025.
 // Update this with the actual participants and their bonus points.

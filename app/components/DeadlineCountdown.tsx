@@ -7,7 +7,7 @@ import { DateTime } from 'luxon';
 
 const DeadlineCountdown = () => {
   // Set the submission deadline to group stage deadline (first deadline)
-  const deadline = DateTime.fromISO('2025-09-09T18:30:00', { zone: 'America/New_York' });
+  const deadline = DateTime.fromISO('2025-09-09T10:30:00', { zone: 'America/New_York' });
   // Initialize timeLeft as null so we can show a skeleton until it's computed.
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
   const [deadlinePassed, setDeadlinePassed] = useState<boolean>(false);

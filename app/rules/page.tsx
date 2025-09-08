@@ -21,14 +21,14 @@ const RulesPage = () => {
         </Typography>
 
         <Typography variant="h5" color="secondary" mt={4} gutterBottom>
-          1. Group Stages Prediction Points (due Sep 9th, 6:30 PM EST):
+          1. Group Stages Prediction Points (due Sep 9th, 10:30 AM EST):
         </Typography>
         <Typography variant="body1" gutterBottom>
           • Correct Match Winner: <strong>10 points</strong>
         </Typography>
 
         <Typography variant="h5" color="secondary" mt={4} gutterBottom>
-          2. Super 4 and Finals (6:30 PM EST Sep 21st for Super 4, 6:30 PM EST Sep 24th for Finals):
+          2. Super 4 and Finals (10:30 AM EST Sep 20th for Super 4, 10:30 AM EST Sep 28th for Finals):
         </Typography>
         <Typography variant="body1" gutterBottom>
           • Correct Super 4 Winner: <strong>160 points/# of winners </strong>
@@ -48,7 +48,7 @@ const RulesPage = () => {
         </Typography>
 
         <Typography variant="h5" color="secondary" mt={4} gutterBottom>
-          4. Bonus Predictions (Group Stage Only, due Sep 9th, 6:30 PM EST):
+          4. Bonus Predictions (Group Stage Only, due Sep 9th, 10:30 AM EST):
         </Typography>
         <Typography variant="body1" gutterBottom>
           • Each correct prediction awards <strong>10 points</strong>.
