@@ -6,8 +6,8 @@ import { Box, Typography, Skeleton } from '@mui/material';
 import { DateTime } from 'luxon';
 
 const DeadlineCountdown = () => {
-  // Set the submission deadline; adjust the zone if needed.
-  const deadline = DateTime.fromISO('2025-03-09T03:59:00', { zone: 'America/New_York' });
+  // Set the submission deadline to group stage deadline (first deadline)
+  const deadline = DateTime.fromISO('2025-09-09T18:30:00', { zone: 'America/New_York' });
   // Initialize timeLeft as null so we can show a skeleton until it's computed.
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
   const [deadlinePassed, setDeadlinePassed] = useState<boolean>(false);
@@ -55,7 +55,7 @@ const DeadlineCountdown = () => {
             // Show a skeleton placeholder covering the entire message area until timeLeft is computed.
             <Skeleton variant="text" width="100%" height={24} />
           ) : (
-            `Deadline to submit your finals bracket: ${timeLeft}`
+            `Deadline to submit your group stage bracket: ${timeLeft}`
           )}
         </Typography>
       )}

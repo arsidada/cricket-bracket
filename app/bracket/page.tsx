@@ -43,64 +43,72 @@ interface Fixture {
   venue: string;
 }
 
-// Group Stage fixtures (read-only; already completed)
+// Group Stage fixtures 
 const fixtures: Fixture[] = [
-  { date: "19 February", match: 1, team1: "Pakistan", team2: "New Zealand", aiPrediction: "Pakistan", venue: "National Stadium, Karachi 🇵🇰" },
-  { date: "20 February", match: 2, team1: "Bangladesh", team2: "India", aiPrediction: "India", venue: "Dubai International Cricket Stadium, Dubai 🇦🇪" },
-  { date: "21 February", match: 3, team1: "Afghanistan", team2: "South Africa", aiPrediction: "South Africa", venue: "National Stadium, Karachi 🇵🇰" },
-  { date: "22 February", match: 4, team1: "Australia", team2: "England", aiPrediction: "Australia", venue: "Gaddafi Stadium, Lahore 🇵🇰" },
-  { date: "23 February", match: 5, team1: "Pakistan", team2: "India", aiPrediction: "India", venue: "Dubai International Cricket Stadium, Dubai 🇦🇪" },
-  { date: "24 February", match: 6, team1: "Bangladesh", team2: "New Zealand", aiPrediction: "New Zealand", venue: "Rawalpindi Cricket Stadium, Rawalpindi 🇵🇰" },
-  { date: "25 February", match: 7, team1: "Australia", team2: "South Africa", aiPrediction: "Australia", venue: "Rawalpindi Cricket Stadium, Rawalpindi 🇵🇰" },
-  { date: "26 February", match: 8, team1: "Afghanistan", team2: "England", aiPrediction: "England", venue: "Gaddafi Stadium, Lahore 🇵🇰" },
-  { date: "27 February", match: 9, team1: "Pakistan", team2: "Bangladesh", aiPrediction: "Pakistan", venue: "Rawalpindi Cricket Stadium, Rawalpindi 🇵🇰" },
-  { date: "28 February", match: 10, team1: "Afghanistan", team2: "Australia", aiPrediction: "Australia", venue: "Gaddafi Stadium, Lahore 🇵🇰" },
-  { date: "1 March", match: 11, team1: "South Africa", team2: "England", aiPrediction: "England", venue: "National Stadium, Karachi 🇵🇰" },
-  { date: "2 March", match: 12, team1: "New Zealand", team2: "India", aiPrediction: "India", venue: "Dubai International Cricket Stadium, Dubai 🇦🇪" }
+  { date: "9 September", match: 1, team1: "Afghanistan", team2: "Hong Kong", aiPrediction: "Afghanistan", venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪" },
+  { date: "10 September", match: 2, team1: "India", team2: "UAE", aiPrediction: "India", venue: "Dubai International Stadium, Dubai 🇦🇪" },
+  { date: "11 September", match: 3, team1: "Bangladesh", team2: "Hong Kong", aiPrediction: "Bangladesh", venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪" },
+  { date: "12 September", match: 4, team1: "Oman", team2: "Pakistan", aiPrediction: "Pakistan", venue: "Dubai International Stadium, Dubai 🇦🇪" },
+  { date: "13 September", match: 5, team1: "Bangladesh", team2: "Sri Lanka", aiPrediction: "Bangladesh", venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪" },
+  { date: "14 September", match: 6, team1: "India", team2: "Pakistan", aiPrediction: "India", venue: "Dubai International Stadium, Dubai 🇦🇪" },
+  { date: "15 September", match: 7, team1: "Hong Kong", team2: "Sri Lanka", aiPrediction: "Sri Lanka", venue: "Dubai International Stadium, Dubai 🇦🇪" },
+  { date: "15 September", match: 8, team1: "UAE", team2: "Oman", aiPrediction: "UAE", venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪" },
+  { date: "16 September", match: 9, team1: "Afghanistan", team2: "Bangladesh", aiPrediction: "Afghanistan", venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪" },
+  { date: "17 September", match: 10, team1: "UAE", team2: "Pakistan", aiPrediction: "Pakistan", venue: "Dubai International Stadium, Dubai 🇦🇪" },
+  { date: "18 September", match: 11, team1: "Afghanistan", team2: "Sri Lanka", aiPrediction: "Afghanistan", venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪" },
+  { date: "19 September", match: 12, team1: "India", team2: "Oman", aiPrediction: "India", venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪" }
 ];
 
-// Playoffs (Semi-finals) fixtures
+// Super 4 fixtures
 const playoffsFixtures: Fixture[] = [
   {
-    date: "4 March",
+    date: "21 September",
     match: 13,
-    team1: "India",
-    team2: "Australia",
-    aiPrediction: "India",
-    venue: "Dubai International Cricket Stadium, Dubai",
+    team1: "TBD",
+    team2: "TBD",
+    aiPrediction: "TBD",
+    venue: "Dubai International Stadium, Dubai 🇦🇪",
   },
   {
-    date: "5 March",
+    date: "22 September",
     match: 14,
-    team1: "South Africa",
-    team2: "New Zealand",
-    aiPrediction: "South Africa",
-    venue: "Gaddafi Stadium, Lahore",
+    team1: "TBD",
+    team2: "TBD",
+    aiPrediction: "TBD",
+    venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪",
+  },
+  {
+    date: "23 September",
+    match: 15,
+    team1: "TBD",
+    team2: "TBD",
+    aiPrediction: "TBD",
+    venue: "Dubai International Stadium, Dubai 🇦🇪",
   },
 ];
 
 // Finals fixtures
 const finalsFixtures: Fixture[] = [
   {
-    date: "9 March",
-    match: 15,
-    team1: "India",
-    team2: "New Zealand",
-    aiPrediction: "India",
-    venue: "Dubai International Cricket Stadium, Dubai",
+    date: "24 September",
+    match: 16,
+    team1: "TBD",
+    team2: "TBD",
+    aiPrediction: "TBD",
+    venue: "Dubai International Stadium, Dubai 🇦🇪",
   },
 ];
 
 const bonusQuestions = [
-  "Tournament’s Top Scorer",
-  "Tournament’s Top Wicket-taker",
+  "Tournament's Top Scorer",
+  "Tournament's Top Wicket-taker",
   "Team with the Highest Single Match Score",
   "Team with the Lowest Single Match Score",
   "Most Sixes by a Player",
   "Most Centuries by a Player",
   "Player with the Most Catches",
   "Player with the Most Player-of-the-Match Awards",
-  "Best Bowling Economy (12.5 overs minimum)",
+  "Best Bowling Economy (minimum 10 overs)",
   "Highest Individual Score",
   "Fastest Fifty",
   "Fastest Century",
@@ -108,19 +116,19 @@ const bonusQuestions = [
 ];
 
 const bonusPredictions: { [key: string]: string } = {
-  "Tournament’s Top Scorer": "Shubman Gill (India)",
-  "Tournament’s Top Wicket-taker": "Adam Zampa (Australia)",
+  "Tournament's Top Scorer": "Babar Azam (Pakistan)",
+  "Tournament's Top Wicket-taker": "Rashid Khan (Afghanistan)",
   "Team with the Highest Single Match Score": "India",
-  "Team with the Lowest Single Match Score": "Afghanistan",
-  "Most Sixes by a Player": "Heinrich Klaasen (South Africa)",
+  "Team with the Lowest Single Match Score": "Hong Kong",
+  "Most Sixes by a Player": "Hardik Pandya (India)",
   "Most Centuries by a Player": "Virat Kohli (India)",
-  "Player with the Most Catches": "Jos Buttler (England)",
-  "Player with the Most Player-of-the-Match Awards": "Shreyas Iyer (India)",
-  "Best Bowling Economy (12.5 overs minimum)": "Keshav Maharaj (South Africa)",
-  "Highest Individual Score": "Fakhar Zaman (Pakistan)",
-  "Fastest Fifty": "Glenn Maxwell (Australia)",
-  "Fastest Century": "Ben Duckett (England)",
-  "Player of the Tournament": "Shubman Gill (India)"
+  "Player with the Most Catches": "Rishabh Pant (India)",
+  "Player with the Most Player-of-the-Match Awards": "Mohammad Rizwan (Pakistan)",
+  "Best Bowling Economy (minimum 10 overs)": "Wanindu Hasaranga (Sri Lanka)",
+  "Highest Individual Score": "Babar Azam (Pakistan)",
+  "Fastest Fifty": "Rohit Sharma (India)",
+  "Fastest Century": "Fakhar Zaman (Pakistan)",
+  "Player of the Tournament": "Virat Kohli (India)"
 };
 
 // TabPanel component (from MUI docs)
@@ -150,11 +158,11 @@ function a11yProps(index: number) {
   };
 }
 
-// Helper to get fixture start time (assuming fixtures start at 04:00 on the given date in 2025)
+// Helper to get fixture start time (assuming fixtures start at 18:30 EST on the given date in 2025)
 // Using Luxon with an explicit time zone
 const getFixtureStartTime = (fixture: Fixture) => {
   const dt = DateTime.fromFormat(
-    `${fixture.date} 2025 04:00`, 
+    `${fixture.date} 2025 18:30`, 
     'd MMMM yyyy HH:mm',
     { zone: 'America/New_York' }
   );
@@ -163,7 +171,7 @@ const getFixtureStartTime = (fixture: Fixture) => {
 
 const BracketSubmission = () => {
   const { data: session } = useSession();
-  const [tabValue, setTabValue] = useState(3);
+  const [tabValue, setTabValue] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Group stage picks state
@@ -178,11 +186,7 @@ const BracketSubmission = () => {
   // NEW: A flag that indicates whether the user has already submitted (finalized) their group stage bracket.
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [showDeadlinePopup, setShowDeadlinePopup] = useState(false);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
-    open: false,
-    message: '',
-    severity: 'success'
-  });
+  const [snackbars, setSnackbars] = useState<Array<{ id: number; open: boolean; message: string; severity: "success" | "error" | "warning" }>>([]);
 
   // --- CHIP STATES ---
   const [selectedChipMenu, setSelectedChipMenu] = useState<"doubleUp" | "wildcard" | null>(null);
@@ -194,23 +198,29 @@ const BracketSubmission = () => {
     wildcard: null
   });
 
-  const showSnackbar = (message: string, severity: "success" | "error") => {
-    setSnackbar({ open: true, message, severity });
+  const showSnackbar = (message: string, severity: "success" | "error" | "warning") => {
+    const id = Date.now() + Math.random(); // Simple unique ID
+    setSnackbars((prev) => [...prev, { id, open: true, message, severity }]);
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbar((prev) => ({ ...prev, open: false }));
+  const handleSnackbarClose = (id: number) => {
+    setSnackbars((prev) => prev.filter((snackbar) => snackbar.id !== id));
   };
 
   // Deadlines for each bracket type
-  const groupStageDeadline = DateTime.fromISO('2025-02-19T03:59:00', { zone: 'America/New_York' });
-  const playoffsDeadline = DateTime.fromISO('2025-03-04T03:59:00', { zone: 'America/New_York' });
-  const finalsDeadline = DateTime.fromISO('2025-03-09T03:59:00', { zone: 'America/New_York' });
+  const groupStageDeadline = DateTime.fromISO('2025-09-09T18:30:00', { zone: 'America/New_York' });
+  const playoffsDeadline = DateTime.fromISO('2025-09-21T18:30:00', { zone: 'America/New_York' });
+  const finalsDeadline = DateTime.fromISO('2025-09-24T18:30:00', { zone: 'America/New_York' });
 
   const now = DateTime.now().setZone('America/New_York');
   const isGroupStagePastDeadline = now > groupStageDeadline;
   const isPlayoffsPastDeadline = now > playoffsDeadline;
   const isFinalsPastDeadline = now > finalsDeadline;
+
+  // Show Super 4 tab only after group stage deadline passes
+  const showSuper4Tab = isGroupStagePastDeadline;
+  // Show Finals tab only after playoffs deadline passes  
+  const showFinalsTab = isPlayoffsPastDeadline;
 
   // For group stage we only lock if the user already finalized their submission.
   const locked = isGroupStagePastDeadline && alreadySubmitted;
@@ -317,7 +327,7 @@ const BracketSubmission = () => {
   };
 
   // Submission functions for each bracket type
-  const doSubmit = async () => {
+  const doSubmit = async (hasEmptyBonusQuestions = false) => {
     setIsSubmitting(true);
     try {
       const response = await fetch('/api/submit-bracket', {
@@ -333,6 +343,11 @@ const BracketSubmission = () => {
       if (response.ok) {
         showSnackbar("Your bracket has been submitted successfully!", "success");
         setAlreadySubmitted(true);
+        
+        // Show bonus reminder as a separate message immediately if needed
+        if (hasEmptyBonusQuestions) {
+          showSnackbar("Remember to make your bonus picks. You can select/update them until the deadline.", "warning");
+        }
       } else {
         showSnackbar("Failed to submit your bracket. Please try again.", "error");
       }
@@ -398,10 +413,12 @@ const BracketSubmission = () => {
         showSnackbar("Please predict the winner for all matches before submitting.", "error");
         return;
       }
+      // Check if any bonus questions are empty
+      let hasEmptyBonusQuestions = false;
       for (const question of bonusQuestions) {
         if (!bonusAnswers[question] || bonusAnswers[question].trim() === "") {
-          showSnackbar(`Please answer the bonus question: "${question}"`, "error");
-          return;
+          hasEmptyBonusQuestions = true;
+          break;
         }
       }
       if (isGroupStagePastDeadline) {
@@ -413,7 +430,7 @@ const BracketSubmission = () => {
           return;
         }
       }
-      doSubmit();
+      doSubmit(hasEmptyBonusQuestions);
     } else if (tabValue === 2) {
       // Playoffs submission
       if (Object.keys(playoffsPredictions).length !== playoffsFixtures.length) {
@@ -445,7 +462,15 @@ const BracketSubmission = () => {
 
   const handlePopupContinue = () => {
     setShowDeadlinePopup(false);
-    doSubmit();
+    // Check if any bonus questions are empty for late submission too
+    let hasEmptyBonusQuestions = false;
+    for (const question of bonusQuestions) {
+      if (!bonusAnswers[question] || bonusAnswers[question].trim() === "") {
+        hasEmptyBonusQuestions = true;
+        break;
+      }
+    }
+    doSubmit(hasEmptyBonusQuestions);
   };
 
   const handlePopupCancel = () => {
@@ -578,7 +603,7 @@ const BracketSubmission = () => {
   // Helper to set the FAB button label based on the active tab.
   const getSubmitButtonLabel = () => {
     if (tabValue === 0 || tabValue === 1) return "Submit Bracket";
-    if (tabValue === 2) return "Submit Playoffs";
+    if (tabValue === 2) return "Submit Super 4";
     if (tabValue === 3) return "Submit Finals";
   };
 
@@ -704,8 +729,8 @@ const BracketSubmission = () => {
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="Bracket Submission Tabs">
           <Tab label="Fixture Picks" {...a11yProps(0)} />
           <Tab label="Bonus Picks" {...a11yProps(1)} />
-          <Tab label="Playoffs" {...a11yProps(2)} />
-          <Tab label="Finals" {...a11yProps(3)} />
+          {showSuper4Tab && <Tab label="Super 4" {...a11yProps(2)} />}
+          {showFinalsTab && <Tab label="Finals" {...a11yProps(3)} />}
         </Tabs>
       </Box>
 
@@ -792,8 +817,8 @@ const BracketSubmission = () => {
         </Box>
       </TabPanel>
 
-      {/* Playoffs Tab */}
-      <TabPanel value={tabValue} index={2}>
+      {/* Super 4 Tab */}
+      {showSuper4Tab && <TabPanel value={tabValue} index={2}>
         {playoffsFixtures.map((fixture) => (
           <Paper key={fixture.match} sx={{ p: 2, my: 2, textAlign: 'center', borderRadius: 2 }}>
             <Typography variant="h6" gutterBottom>
@@ -837,10 +862,10 @@ const BracketSubmission = () => {
             </Collapse>
           </Paper>
         ))}
-      </TabPanel>
+      </TabPanel>}
 
       {/* Finals Tab */}
-      <TabPanel value={tabValue} index={3}>
+      {showFinalsTab && <TabPanel value={tabValue} index={3}>
         {(!finalsFixtures[0].team1 || !finalsFixtures[0].team2) ? (
           <Typography variant="body1">Finals are not available yet.</Typography>
         ) : (
@@ -888,7 +913,7 @@ const BracketSubmission = () => {
             </Paper>
           ))
         )}
-      </TabPanel>
+      </TabPanel>}
 
       <Fab
         variant="extended"
@@ -910,16 +935,22 @@ const BracketSubmission = () => {
         {getSubmitButtonLabel()}
       </Fab>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      {snackbars.map((snackbar, index) => (
+        <Snackbar
+          key={snackbar.id}
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => handleSnackbarClose(snackbar.id)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          sx={{ 
+            bottom: `${16 + (index * 72)}px !important` // Stack snackbars vertically
+          }}
+        >
+          <Alert onClose={() => handleSnackbarClose(snackbar.id)} severity={snackbar.severity} sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      ))}
 
       <Dialog open={showDeadlinePopup} onClose={handlePopupCancel}>
         <DialogTitle>Submission Deadline Passed</DialogTitle>

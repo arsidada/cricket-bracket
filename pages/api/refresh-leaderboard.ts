@@ -8,45 +8,14 @@ import { DateTime } from 'luxon';
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
 // Set the deadline as a Luxon DateTime in EST.
-const deadlineDT = DateTime.fromISO("2025-02-19T03:59:00", { zone: "America/New_York" });
+const deadlineDT = DateTime.fromISO("2025-09-09T18:30:00", { zone: "America/New_York" });
 
-// Hardcoded bonus points mapping.
+// Hardcoded bonus points mapping for Asia Cup 2025.
+// Update this with the actual participants and their bonus points.
 const hardcodedBonusPoints: { [player: string]: number } = {
-  "Arsalan Rana": 10,
-  "Hamza Qurashi": 10,
-  "Owais Khan": 10,
-  "Sajj Khan": 20,
-  "Farooq Sani": 0,
-  "Ammar Hakim": 0,
-  "Fareed Cheema": 0,
-  "Rizwan Rana": 0,
-  "Cirez D": 10,
-  "Omar Shakur": 10,
-  "Muhammad Ali": 0,
-  "Farhan Rana": 10,
-  "Umair Shafiq": 10,
-  "Sidrah Syed": 20,
-  "Nashra Syed": 10,
-  "Iqra Syed": 10,
-  "Salman Rana": 10,
-  "Arooj Arsalan": 0,
-  "Ishrat Ahsan": 0,
-  "bushra syed": 0,
-  "Asif Syed": 0,
-  "Areeba Khan": 20,
-  "Hira Syed": 10,
-  "Hasham Hanif": 10,
-  "Akif Saleem": 10,
-  "Syed Ajlal": 10,
-  "Sohaeb Raashid": 0,
-  "HB": 10,
-  "Rana Arham Raashid": 0,
-  "Ammar Alam": 10,
-  "Isaac Money": 10,
-  "bilal haroon": 10,
-  "Fahad Siddiqui": 0,
-  "Saad Syed": 0,
-  "Mazhar Bari": 10
+  // Add Asia Cup 2025 participants here
+  // Example:
+  // "Player Name": 10,
 };
 
 /**
@@ -63,7 +32,7 @@ const hardcodedBonusPoints: { [player: string]: number } = {
  */
 function calculateLeaderboard(
   groupStageData: any[][],
-  super8Data: any[][],
+  super4Data: any[][],
   playoffsData: any[][],
   finalsData: any[][],
   bonusesData: any[][], // ignored in favor of hardcoded bonus map.
@@ -74,7 +43,7 @@ function calculateLeaderboard(
   const players: {
     [key: string]: {
       groupPoints: number;
-      super8Points: number;
+      super4Points: number;
       playoffPoints: number;
       bonusPoints: number;
       totalPoints: number;
@@ -88,7 +57,7 @@ function calculateLeaderboard(
     if (!players[playerName]) {
       players[playerName] = {
         groupPoints: 0,
-        super8Points: 0,
+        super4Points: 0,
         playoffPoints: 0,
         bonusPoints: 0,
         totalPoints: 0,
@@ -118,7 +87,7 @@ function calculateLeaderboard(
       if (!winner) continue;
       const matchNumber = i; // using row index as match number
 
-      if (stage === "Playoffs Semi-finals" || stage === "Playoffs Final" || stage === "Finals") {
+      if (stage === "Playoffs Semi-finals" || stage === "Playoffs Final" || stage === "Finals" || stage === "Super 4") {
         let pool = 0;
         if (stage === "Playoffs Semi-finals") {
           pool = 160;
@@ -126,6 +95,8 @@ function calculateLeaderboard(
           pool = 160; // If you have separate pool for playoffs final, adjust here.
         } else if (stage === "Finals") {
           pool = 260;
+        } else if (stage === "Super 4") {
+          pool = 160; // Same pool as playoffs for Super 4 matches
         }
         // Count the number of players who picked the winner.
         let correctCount = 0;
@@ -151,7 +122,7 @@ function calculateLeaderboard(
           }
         }
       } else {
-        // For Group Stage and Super 8.
+        // For Group Stage and Super 4.
         for (let j = 0; j < header.length; j++) {
           const playerName = header[j];
           if (!['Date', 'Match', 'Team 1', 'Team 2', 'Winner', 'POTM'].includes(playerName)) {
@@ -164,8 +135,8 @@ function calculateLeaderboard(
               players[playerName].totalPoints += pointsAwarded;
               if (stage === "Group Stage") {
                 players[playerName].groupPoints += pointsAwarded;
-              } else if (stage === "Super 8") {
-                players[playerName].super8Points += pointsAwarded;
+              } else if (stage === "Super 4") {
+                players[playerName].super4Points += pointsAwarded;
               }
             } else if (row[j] === winner) {
               if (stage === "Group Stage") {
@@ -188,8 +159,8 @@ function calculateLeaderboard(
               players[playerName].totalPoints += pointsAwarded;
               if (stage === "Group Stage") {
                 players[playerName].groupPoints += pointsAwarded;
-              } else if (stage === "Super 8") {
-                players[playerName].super8Points += pointsAwarded;
+              } else if (stage === "Super 4") {
+                players[playerName].super4Points += pointsAwarded;
               }
             }
           }
@@ -205,11 +176,11 @@ function calculateLeaderboard(
     console.error("Group Stage data is empty or invalid");
   }
 
-  // Process Super 8 predictions: base points = 15.
-  if (super8Data && super8Data.length > 0) {
-    processPredictions(super8Data, 15, "Super 8");
+  // Process Super 4 predictions: pool-based scoring like playoffs.
+  if (super4Data && super4Data.length > 0) {
+    processPredictions(super4Data, 0, "Super 4");
   } else {
-    console.log("Super 8 data is empty; skipping.");
+    console.log("Super 4 data is empty; skipping.");
   }
 
   // Process Playoffs predictions.
@@ -291,7 +262,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       const currentData = currentSnapshotRes.data.values;
       if (currentData && currentData.length > 0) {
-        // Assuming header: [Rank, Previous Rank, Player, Group Points, Super8 Points, Playoffs Points, Bonus Points, Total Points, Penalty, Timestamp, Chips Used]
+        // Assuming header: [Rank, Previous Rank, Player, Group Points, Super4 Points, Playoffs Points, Bonus Points, Total Points, Penalty, Timestamp, Chips Used]
         for (const row of currentData) {
           const playerName = row[2]; // Column C: Player
           const prevRank = Number(row[0]); // Column A: Rank from previous snapshot
@@ -315,7 +286,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       chipsRes
     ] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Predictions Overview!A1:Z1000' }),
-      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Super8!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Super4!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Playoffs!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Finals!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Bonuses Overview!A1:Z1000' }),
@@ -324,7 +295,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ]);
 
     const groupStageData = groupStageRes.data.values || [];
-    const super8Data = super8Res.data.values || [];
+    const super4Data = super8Res.data.values || [];
     const playoffsData = playoffsRes.data.values || [];
     const finalsData = finalsRes.data.values || [];
     const bonusesData: any[] = []; // Explicitly typed as any[]
@@ -381,7 +352,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Evaluate the leaderboard.
     const players = calculateLeaderboard(
       groupStageData,
-      super8Data,
+      super4Data,
       playoffsData,
       finalsData,
       bonusesData,
@@ -404,17 +375,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Prepare a snapshot array for the "Leaderboard" tab.
-    // New header: [Rank, Previous Rank, Player, Group Points, Super8 Points, Playoffs Points, Bonus Points, Total Points, Penalty, Timestamp, Chips Used]
+    // New header: [Rank, Previous Rank, Player, Group Points, Super4 Points, Playoffs Points, Bonus Points, Total Points, Penalty, Timestamp, Chips Used]
     const leaderboardValues = [
-      ['Rank', 'Previous Rank', 'Player', 'Group Points', 'Super8 Points', 'Playoffs Points', 'Bonus Points', 'Total Points', 'Penalty', 'Timestamp', 'Chips Used'],
+      ['Rank', 'Previous Rank', 'Player', 'Group Points', 'Super4 Points', 'Playoffs Points', 'Bonus Points', 'Total Points', 'Penalty', 'Timestamp', 'Chips Used'],
       ...Object.entries(players)
-        .map(([name, { groupPoints, super8Points, playoffPoints, bonusPoints, totalPoints, timestamp, penalty }]) => {
+        .map(([name, { groupPoints, super4Points, playoffPoints, bonusPoints, totalPoints, timestamp, penalty }]) => {
           // Look up bonus points from our hardcoded mapping (defaulting to 0)
           const bonus = hardcodedBonusPoints[name] || 0;
           return {
             name,
             groupPoints,
-            super8Points,
+            super4Points,
             playoffPoints,
             bonusPoints: bonus,
             totalPoints: totalPoints, // totalPoints already had bonus added in calculateLeaderboard, if applicable
@@ -431,7 +402,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           prevRankMapping[player.name] || '',
           player.name,
           player.groupPoints,
-          player.super8Points,
+          player.super4Points,
           player.playoffPoints,
           player.bonusPoints,
           player.totalPoints,

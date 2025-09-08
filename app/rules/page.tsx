@@ -17,21 +17,21 @@ const RulesPage = () => {
     >
       <Paper elevation={3} sx={{ padding: 4, maxWidth: 800 }}>
         <Typography variant="h3" align="center" gutterBottom color="primary">
-          CT 2025 Bracket Challenge Rules
+          Asia Cup 2025 Bracket Challenge Rules
         </Typography>
 
         <Typography variant="h5" color="secondary" mt={4} gutterBottom>
-          1. Group Stages Prediction Points (due Feb 19th, 3:59AM EST):
+          1. Group Stages Prediction Points (due Sep 9th, 6:30 PM EST):
         </Typography>
         <Typography variant="body1" gutterBottom>
           • Correct Match Winner: <strong>10 points</strong>
         </Typography>
 
         <Typography variant="h5" color="secondary" mt={4} gutterBottom>
-          2. Semi-Finals and Finals (3:59AM EST March 4th for Semi-Finals, 3:59AM EST March 9th for Finals):
+          2. Super 4 and Finals (6:30 PM EST Sep 21st for Super 4, 6:30 PM EST Sep 24th for Finals):
         </Typography>
         <Typography variant="body1" gutterBottom>
-          • Correct Semi-Final Winner: <strong>160 points/# of winners </strong>
+          • Correct Super 4 Winner: <strong>160 points/# of winners </strong>
         </Typography>
         <Typography variant="body1" gutterBottom>
           • Correct Final Winner: <strong>260 points/# of winners</strong>
@@ -48,7 +48,7 @@ const RulesPage = () => {
         </Typography>
 
         <Typography variant="h5" color="secondary" mt={4} gutterBottom>
-          4. Bonus Predictions (Group Stage Only, due Feb 19th, 3:59AM EST):
+          4. Bonus Predictions (Group Stage Only, due Sep 9th, 6:30 PM EST):
         </Typography>
         <Typography variant="body1" gutterBottom>
           • Each correct prediction awards <strong>10 points</strong>.

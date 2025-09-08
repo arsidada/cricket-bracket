@@ -51,9 +51,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Fetch sheets with error handling
-    const [groupStage, super8, playoffs, links, bonuses, finals] = await Promise.all([
+    const [groupStage, super4, playoffs, links, bonuses, finals] = await Promise.all([
       fetchSheetData('Predictions Overview!A1:Z1000'),
-      fetchSheetData('Super8!A1:Z1000'),
+      fetchSheetData('Super4!A1:Z1000'),
       fetchSheetData('Playoffs!A1:Z1000'),
       fetchSheetData('Links!A1:C1000'),
       fetchSheetData('Bonuses Overview!A1:Z1000'),
@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({
       groupStage,
-      super8,
+      super4,
       playoffs,
       finals,
       links,
