@@ -116,19 +116,19 @@ const bonusQuestions = [
 ];
 
 const bonusPredictions: { [key: string]: string } = {
-  "Tournament's Top Scorer": "Babar Azam (Pakistan)",
+  "Tournament's Top Scorer": "Shubman Gill (India)",
   "Tournament's Top Wicket-taker": "Rashid Khan (Afghanistan)",
   "Team with the Highest Single Match Score": "India",
   "Team with the Lowest Single Match Score": "Hong Kong",
-  "Most Sixes by a Player": "Hardik Pandya (India)",
-  "Most Centuries by a Player": "Virat Kohli (India)",
-  "Player with the Most Catches": "Rishabh Pant (India)",
-  "Player with the Most Player-of-the-Match Awards": "Mohammad Rizwan (Pakistan)",
-  "Best Bowling Economy (minimum 10 overs)": "Wanindu Hasaranga (Sri Lanka)",
-  "Highest Individual Score": "Babar Azam (Pakistan)",
-  "Fastest Fifty": "Rohit Sharma (India)",
-  "Fastest Century": "Fakhar Zaman (Pakistan)",
-  "Player of the Tournament": "Virat Kohli (India)"
+  "Most Sixes by a Player": "Suryakumar Yadav (India)",
+  "Most Centuries by a Player": "Shubman Gill (India)",
+  "Player with the Most Catches": "Suryakumar Yadav (India)",
+  "Player with the Most Player-of-the-Match Awards": "Rashid Khan (Afghanistan)",
+  "Best Bowling Economy (minimum 10 overs)": "Jasprit Bumrah (India)",
+  "Highest Individual Score": "Shubman Gill (India)",
+  "Fastest Fifty": "Abhishek Sharma (India)",
+  "Fastest Century": "Suryakumar Yadav (India)",
+  "Player of the Tournament": "Suryakumar Yadav (India)"
 };
 
 // TabPanel component (from MUI docs)
