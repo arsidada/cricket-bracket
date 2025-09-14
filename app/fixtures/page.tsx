@@ -33,6 +33,10 @@ const teamFlags: { [key: string]: string } = {
   Australia: '🇦🇺',
   England: '🇬🇧',
   Afghanistan: '🇦🇫',
+  'Sri Lanka': '🇱🇰',
+  Oman: '🇴🇲',
+  UAE: '🇦🇪',
+  'Hong Kong': '🇭🇰',
 };
 
 // A larger, styled Chip that includes flags
