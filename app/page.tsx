@@ -56,20 +56,48 @@ const HomePage = () => {
       sx={{
         minHeight: '100vh',
         backgroundColor: theme.palette.background.default,
+        background: theme.palette.mode === 'dark' 
+          ? 'radial-gradient(ellipse at top, #1a1a1a, #0f0f0f)'
+          : 'radial-gradient(ellipse at top, #f8fffe, #f0f9f4)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        pt: 8, // space for the navbar at the top if needed
+        pt: 8,
         px: 2,
       }}
     >
-      <Typography variant="h4" color="text.primary" gutterBottom>
-        Welcome, {session.user?.name}!
-      </Typography>
-      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-        Use the menu to navigate to the Rules, Your Bracket, Fixture Picks, or Leaderboard.
-      </Typography>
-      <Box sx={{ width: '100%', mt: 4 }}>
+      <Box textAlign="center" mb={4}>
+        <Typography 
+          variant="h3" 
+          sx={{ 
+            fontWeight: 800,
+            background: theme.palette.mode === 'dark'
+              ? 'linear-gradient(45deg, #4CAF50, #81C784)'
+              : 'linear-gradient(45deg, #1B5E20, #2E7D32)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            letterSpacing: '-0.02em',
+            mb: 2,
+          }}
+        >
+          🏏 Welcome, {session.user?.name}!
+        </Typography>
+        <Typography 
+          variant="h6" 
+          color="text.secondary" 
+          sx={{ 
+            fontWeight: 400,
+            maxWidth: 600,
+            mx: 'auto',
+            lineHeight: 1.6,
+          }}
+        >
+          Your cricket bracket challenge dashboard. Use the menu to navigate between sections and track your predictions!
+        </Typography>
+      </Box>
+      
+      <Box sx={{ width: '100%', maxWidth: 800, mt: 2 }}>
         <RecentActivity />
       </Box>
     </Box>

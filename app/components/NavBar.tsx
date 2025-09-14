@@ -15,11 +15,13 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import DeadlineCountdown from './DeadlineCountdown';
 
 const NavBar: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
     if (
@@ -31,51 +33,81 @@ const NavBar: React.FC = () => {
     setDrawerOpen(open);
   };
 
+  const menuItems = [
+    { href: '/', label: 'Home', icon: '🏠' },
+    { href: '/bracket', label: 'Your Bracket', icon: '🏏' },
+    { href: '/fixtures', label: 'Fixture Picks', icon: '📊' },
+    { href: '/bonus-picks', label: 'Bonus Picks', icon: '🎯' },
+    { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
+    { href: '/rules', label: 'Rules', icon: '📋' },
+  ];
+
   const list = () => (
     <Box
       sx={{
-        width: 250,
+        width: 280,
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
+        background: 'linear-gradient(180deg, #1B5E20 0%, #2E7D32 100%)',
+        color: 'white',
       }}
       role="presentation"
       onClick={toggleDrawer(false)}
       onKeyDown={toggleDrawer(false)}
     >
-      <List>
-        <Link href="/" passHref>
-          <ListItem button component="a">
-            <ListItemText primary="Home" />
-          </ListItem>
-        </Link>
-        <Link href="/bracket" passHref>
-          <ListItem button component="a">
-            <ListItemText primary="Your Bracket" />
-          </ListItem>
-        </Link>
-        <Link href="/fixtures" passHref>
-          <ListItem button component="a">
-            <ListItemText primary="Fixture Picks" />
-          </ListItem>
-        </Link>
-        <Link href="/bonus-picks" passHref>
-          <ListItem button component="a">
-            <ListItemText primary="Bonus Picks" />
-          </ListItem>
-        </Link>
-        <Link href="/leaderboard" passHref>
-          <ListItem button component="a">
-            <ListItemText primary="Leaderboard" />
-          </ListItem>
-        </Link>
-        <Link href="/rules" passHref>
-          <ListItem button component="a">
-            <ListItemText primary="Rules" />
-          </ListItem>
-        </Link>
-      </List>
+      <Box>
+        <Box sx={{ p: 3, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: 'white' }}>
+            🏏 Navigation
+          </Typography>
+        </Box>
+        <List sx={{ pt: 2 }}>
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href} passHref>
+                <ListItem 
+                  button 
+                  component="a"
+                  sx={{
+                    mx: 2,
+                    mb: 1,
+                    borderRadius: 2,
+                    backgroundColor: isActive ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                    },
+                    transition: 'all 0.2s ease-in-out',
+                  }}
+                >
+                  <Typography sx={{ mr: 2, fontSize: '1.2rem' }}>
+                    {item.icon}
+                  </Typography>
+                  <ListItemText 
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontWeight: isActive ? 600 : 400,
+                      color: 'white',
+                    }}
+                  />
+                  {isActive && (
+                    <Box
+                      sx={{
+                        width: 4,
+                        height: 20,
+                        backgroundColor: '#FF6F00',
+                        borderRadius: 2,
+                      }}
+                    />
+                  )}
+                </ListItem>
+              </Link>
+            );
+          })}
+        </List>
+      </Box>
       <Box
         sx={{
           padding: 2,
@@ -109,12 +141,31 @@ const NavBar: React.FC = () => {
 
   return (
     <>
-      <AppBar position="fixed" sx={{ backgroundColor: 'black' }}>
+      <AppBar position="fixed" sx={{ 
+        background: 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)',
+        boxShadow: '0 4px 20px rgba(27, 94, 32, 0.3)'
+      }}>
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center' }}>
-            Asia Cup 2025 Bracket Challenge
+          <Typography variant="h6" sx={{ 
+            flexGrow: 1, 
+            textAlign: 'center',
+            fontWeight: 700,
+            letterSpacing: '0.02em',
+            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+          }}>
+            🏏 Asia Cup 2025 Bracket Challenge
           </Typography>
-          <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)}>
+          <IconButton 
+            edge="start" 
+            color="inherit" 
+            aria-label="menu" 
+            onClick={toggleDrawer(true)}
+            sx={{ 
+              '&:hover': { 
+                backgroundColor: 'rgba(255,255,255,0.1)' 
+              } 
+            }}
+          >
             <MenuIcon />
           </IconButton>
         </Toolbar>

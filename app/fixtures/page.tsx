@@ -39,11 +39,35 @@ const teamFlags: { [key: string]: string } = {
   'Hong Kong': '🇭🇰',
 };
 
+// Team colors for enhanced visual design
+const teamColors: { [key: string]: { primary: string; secondary: string } } = {
+  'New Zealand': { primary: '#000000', secondary: '#FFFFFF' },
+  India: { primary: '#FF9933', secondary: '#138808' },
+  Bangladesh: { primary: '#006A4E', secondary: '#F42A41' },
+  Pakistan: { primary: '#00684A', secondary: '#FFFFFF' },
+  'South Africa': { primary: '#FFD100', secondary: '#007749' },
+  Australia: { primary: '#FFD100', secondary: '#007749' },
+  England: { primary: '#012169', secondary: '#C8102E' },
+  Afghanistan: { primary: '#D32011', secondary: '#000000' },
+  'Sri Lanka': { primary: '#FFB300', secondary: '#0056B3' },
+  Oman: { primary: '#EE2737', secondary: '#009639' },
+  UAE: { primary: '#00732F', secondary: '#FF0000' },
+  'Hong Kong': { primary: '#DE2910', secondary: '#FFFFFF' },
+};
+
 // A larger, styled Chip that includes flags
 const BigChip = styled(Chip)(({ theme }) => ({
-  fontSize: '1.2rem',
-  padding: '8px 12px',
+  fontSize: '1.1rem',
+  padding: '10px 16px',
   height: 'auto',
+  fontWeight: 600,
+  borderRadius: '12px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+  transition: 'all 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-1px)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  },
 }));
 
 type SnackbarState = {
@@ -138,10 +162,28 @@ const AdminFixtureUpdate = ({
 
 // Styled Accordion for fixture cards
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
-  boxShadow: theme.shadows[3],
-  borderRadius: theme.spacing(1),
-  marginBottom: theme.spacing(2),
+  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+  borderRadius: '16px',
+  marginBottom: theme.spacing(3),
+  border: '1px solid rgba(0,0,0,0.06)',
+  overflow: 'hidden',
+  transition: 'all 0.3s ease-in-out',
   '&:before': { display: 'none' },
+  '&:hover': {
+    boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+    transform: 'translateY(-2px)',
+  },
+  '& .MuiAccordionSummary-root': {
+    padding: theme.spacing(2, 3),
+    background: theme.palette.mode === 'dark' 
+      ? 'linear-gradient(135deg, #2A2A2A 0%, #3A3A3A 100%)'
+      : 'linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%)',
+    borderRadius: '16px 16px 0 0',
+  },
+  '& .MuiAccordionDetails-root': {
+    padding: theme.spacing(2, 3, 3, 3),
+    background: theme.palette.background.paper,
+  },
 }));
 
 // Accordion component for each fixture
@@ -161,33 +203,73 @@ const FixtureAccordion = ({
     .filter(([_, pick]) => pick === fixture.team2)
     .map(([player]) => player);
 
+  const getMatchTypeChip = (matchNum: string) => {
+    const match = parseInt(matchNum);
+    if (match <= 12) return { label: 'Group Stage', color: '#1B5E20' };
+    if (match <= 15) return { label: 'Super 4', color: '#FF6F00' };
+    return { label: 'Final', color: '#D32F2F' };
+  };
+
+  const matchType = getMatchTypeChip(fixture.match);
+
   return (
     <StyledAccordion>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box sx={{ width: '100%', textAlign: 'center' }}>
-          <Typography variant="subtitle1">
-            {fixture.date} – Match {fixture.match}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
+              {fixture.date} – Match {fixture.match}
+            </Typography>
+            <Chip 
+              label={matchType.label}
+              size="small"
+              sx={{ 
+                backgroundColor: matchType.color,
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.75rem'
+              }}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 2 }}>
             <BigChip
               label={`${teamFlags[fixture.team1] || ''} ${fixture.team1}`}
-              color={
-                fixture.winner === 'DRAW'
-                  ? 'warning'
+              sx={{
+                backgroundColor: fixture.winner === 'DRAW' 
+                  ? '#ED6C02'
                   : fixture.team1 === fixture.winner
-                  ? 'success'
-                  : 'default'
-              }
+                  ? '#2E7D32'
+                  : teamColors[fixture.team1]?.primary || '#E0E0E0',
+                color: fixture.winner === 'DRAW' || fixture.team1 === fixture.winner
+                  ? 'white'
+                  : teamColors[fixture.team1]?.secondary || '#000000',
+                border: `2px solid ${teamColors[fixture.team1]?.secondary || '#E0E0E0'}`,
+              }}
             />
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                alignSelf: 'center', 
+                mx: 1, 
+                fontWeight: 'bold',
+                color: 'text.secondary'
+              }}
+            >
+              vs
+            </Typography>
             <BigChip
               label={`${teamFlags[fixture.team2] || ''} ${fixture.team2}`}
-              color={
-                fixture.winner === 'DRAW'
-                  ? 'warning'
+              sx={{
+                backgroundColor: fixture.winner === 'DRAW' 
+                  ? '#ED6C02'
                   : fixture.team2 === fixture.winner
-                  ? 'success'
-                  : 'default'
-              }
+                  ? '#2E7D32'
+                  : teamColors[fixture.team2]?.primary || '#E0E0E0',
+                color: fixture.winner === 'DRAW' || fixture.team2 === fixture.winner
+                  ? 'white'
+                  : teamColors[fixture.team2]?.secondary || '#000000',
+                border: `2px solid ${teamColors[fixture.team2]?.secondary || '#E0E0E0'}`,
+              }}
             />
           </Box>
         </Box>

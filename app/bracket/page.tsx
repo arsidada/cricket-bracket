@@ -26,13 +26,31 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Chip
 } from '@mui/material';
 import { ExpandMore, ExpandLess } from '@mui/icons-material';
 import LooksTwoIcon from '@mui/icons-material/LooksTwo';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import SendIcon from '@mui/icons-material/Send';
 import { DateTime } from 'luxon';
+import { useTheme } from '@mui/material/styles';
+
+// Team colors for enhanced visual design
+const teamColors: { [key: string]: { primary: string; secondary: string } } = {
+  'New Zealand': { primary: '#000000', secondary: '#FFFFFF' },
+  India: { primary: '#FF9933', secondary: '#138808' },
+  Bangladesh: { primary: '#006A4E', secondary: '#F42A41' },
+  Pakistan: { primary: '#00684A', secondary: '#FFFFFF' },
+  'South Africa': { primary: '#FFD100', secondary: '#007749' },
+  Australia: { primary: '#FFD100', secondary: '#007749' },
+  England: { primary: '#012169', secondary: '#C8102E' },
+  Afghanistan: { primary: '#D32011', secondary: '#000000' },
+  'Sri Lanka': { primary: '#FFB300', secondary: '#0056B3' },
+  Oman: { primary: '#EE2737', secondary: '#009639' },
+  UAE: { primary: '#00732F', secondary: '#FF0000' },
+  'Hong Kong': { primary: '#DE2910', secondary: '#FFFFFF' },
+};
 
 interface Fixture {
   date: string;
@@ -171,6 +189,7 @@ const getFixtureStartTime = (fixture: Fixture) => {
 
 const BracketSubmission = () => {
   const { data: session } = useSession();
+  const theme = useTheme();
   const [tabValue, setTabValue] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -736,57 +755,163 @@ const BracketSubmission = () => {
 
       {/* Group Stage Tab */}
       <TabPanel value={tabValue} index={0}>
-        {fixtures.map((fixture) => (
-          <Paper key={fixture.match} sx={{ p: 2, my: 2, textAlign: 'center', borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Match {fixture.match} - {fixture.date}
-            </Typography>
-            <Box display="flex" justifyContent="center" gap={2}>
-              {isLoading ? (
-                <Skeleton variant="rectangular" width="100%" height={40} />
-              ) : (
-                <Button
-                  variant={predictions[fixture.match] === fixture.team1 ? "contained" : "outlined"}
-                  onClick={() => handleSelection(fixture.match, fixture.team1)}
-                  disabled={locked}
-                >
-                  {fixture.team1}
-                </Button>
-              )}
-              {isLoading ? (
-                <Skeleton variant="rectangular" width="100%" height={40} />
-              ) : (
-                <Button
-                  variant={predictions[fixture.match] === fixture.team2 ? "contained" : "outlined"}
-                  onClick={() => handleSelection(fixture.match, fixture.team2)}
-                  disabled={locked}
-                >
-                  {fixture.team2}
-                </Button>
-              )}
-            </Box>
-            <Button
-              variant="text"
-              color="secondary"
-              size="small"
-              onClick={() => toggleDetails(fixture.match)}
-              endIcon={detailsOpen[fixture.match] ? <ExpandLess /> : <ExpandMore />}
-              sx={{ mt: 1 }}
-            >
-              Details
-            </Button>
-            <Collapse in={detailsOpen[fixture.match]}>
-              <Box mt={2} p={2} bgcolor="#f5f5f5" borderRadius={2}>
-                <Typography variant="body2">
-                  <strong>✨ AI Prediction:</strong> {fixture.aiPrediction}
+        {fixtures.map((fixture) => {
+          const getMatchTypeInfo = (matchNum: number) => {
+            if (matchNum <= 12) return { label: 'Group Stage', color: '#1B5E20', icon: '⚪' };
+            if (matchNum <= 15) return { label: 'Super 4', color: '#FF6F00', icon: '🟡' };
+            return { label: 'Final', color: '#D32F2F', icon: '🏆' };
+          };
+          
+          const matchInfo = getMatchTypeInfo(fixture.match);
+
+          return (
+            <Paper key={fixture.match} sx={{ 
+              p: 3, 
+              my: 3, 
+              textAlign: 'center', 
+              borderRadius: 3,
+              boxShadow: theme.palette.mode === 'dark' 
+                ? '0 4px 20px rgba(0,0,0,0.3)' 
+                : '0 4px 20px rgba(0,0,0,0.1)',
+              background: theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #2A2A2A 0%, #1E1E1E 100%)'
+                : 'linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%)',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 8px 30px rgba(0,0,0,0.4)'
+                  : '0 8px 30px rgba(0,0,0,0.15)',
+                transform: 'translateY(-2px)',
+              },
+            }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6" sx={{ fontWeight: 700, flex: 1 }}>
+                  Match {fixture.match} - {fixture.date}
                 </Typography>
-                <Typography variant="body2">
-                  <strong>📍 Venue:</strong> {fixture.venue}
-                </Typography>
+                <Chip 
+                  label={`${matchInfo.icon} ${matchInfo.label}`}
+                  size="small"
+                  sx={{ 
+                    backgroundColor: matchInfo.color,
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.8rem'
+                  }}
+                />
               </Box>
-            </Collapse>
-          </Paper>
-        ))}
+              <Box display="flex" justifyContent="center" gap={3} alignItems="center">
+                {isLoading ? (
+                  <Skeleton variant="rectangular" width="100%" height={48} sx={{ borderRadius: 2 }} />
+                ) : (
+                  <Button
+                    variant={predictions[fixture.match] === fixture.team1 ? "contained" : "outlined"}
+                    onClick={() => handleSelection(fixture.match, fixture.team1)}
+                    disabled={locked}
+                    sx={{
+                      minWidth: 140,
+                      height: 48,
+                      borderRadius: 3,
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      backgroundColor: predictions[fixture.match] === fixture.team1 
+                        ? teamColors[fixture.team1]?.primary || theme.palette.primary.main
+                        : 'transparent',
+                      color: predictions[fixture.match] === fixture.team1
+                        ? teamColors[fixture.team1]?.secondary || 'white'
+                        : theme.palette.mode === 'dark' 
+                          ? theme.palette.text.primary
+                          : teamColors[fixture.team1]?.primary || theme.palette.primary.main,
+                      borderColor: theme.palette.mode === 'dark'
+                        ? theme.palette.primary.main
+                        : teamColors[fixture.team1]?.primary || theme.palette.primary.main,
+                      borderWidth: 2,
+                      '&:hover': {
+                        backgroundColor: predictions[fixture.match] === fixture.team1
+                          ? teamColors[fixture.team1]?.primary || theme.palette.primary.main
+                          : theme.palette.mode === 'dark'
+                            ? `${theme.palette.primary.main}20`
+                            : `${teamColors[fixture.team1]?.primary || theme.palette.primary.main}15`,
+                        borderWidth: 2,
+                      },
+                    }}
+                  >
+                    {fixture.team1}
+                  </Button>
+                )}
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.secondary', mx: 2 }}>
+                  vs
+                </Typography>
+                {isLoading ? (
+                  <Skeleton variant="rectangular" width="100%" height={48} sx={{ borderRadius: 2 }} />
+                ) : (
+                  <Button
+                    variant={predictions[fixture.match] === fixture.team2 ? "contained" : "outlined"}
+                    onClick={() => handleSelection(fixture.match, fixture.team2)}
+                    disabled={locked}
+                    sx={{
+                      minWidth: 140,
+                      height: 48,
+                      borderRadius: 3,
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      backgroundColor: predictions[fixture.match] === fixture.team2 
+                        ? teamColors[fixture.team2]?.primary || theme.palette.primary.main
+                        : 'transparent',
+                      color: predictions[fixture.match] === fixture.team2
+                        ? teamColors[fixture.team2]?.secondary || 'white'
+                        : theme.palette.mode === 'dark' 
+                          ? theme.palette.text.primary
+                          : teamColors[fixture.team2]?.primary || theme.palette.primary.main,
+                      borderColor: theme.palette.mode === 'dark'
+                        ? theme.palette.primary.main
+                        : teamColors[fixture.team2]?.primary || theme.palette.primary.main,
+                      borderWidth: 2,
+                      '&:hover': {
+                        backgroundColor: predictions[fixture.match] === fixture.team2
+                          ? teamColors[fixture.team2]?.primary || theme.palette.primary.main
+                          : theme.palette.mode === 'dark'
+                            ? `${theme.palette.primary.main}20`
+                            : `${teamColors[fixture.team2]?.primary || theme.palette.primary.main}15`,
+                        borderWidth: 2,
+                      },
+                    }}
+                  >
+                    {fixture.team2}
+                  </Button>
+                )}
+              </Box>
+              <Button
+                variant="text"
+                color="secondary"
+                size="small"
+                onClick={() => toggleDetails(fixture.match)}
+                endIcon={detailsOpen[fixture.match] ? <ExpandLess /> : <ExpandMore />}
+                sx={{ mt: 2 }}
+              >
+                Details
+              </Button>
+              <Collapse in={detailsOpen[fixture.match]}>
+                <Box 
+                  mt={2} 
+                  p={2} 
+                  borderRadius={2}
+                  sx={{
+                    bgcolor: theme.palette.mode === 'dark' 
+                      ? 'rgba(255,255,255,0.05)' 
+                      : '#f5f5f5'
+                  }}
+                >
+                  <Typography variant="body2" color="text.primary">
+                    <strong>✨ AI Prediction:</strong> {fixture.aiPrediction}
+                  </Typography>
+                  <Typography variant="body2" color="text.primary">
+                    <strong>📍 Venue:</strong> {fixture.venue}
+                  </Typography>
+                </Box>
+              </Collapse>
+            </Paper>
+          );
+        })}
       </TabPanel>
 
       {/* Bonus Picks Tab */}
@@ -901,11 +1026,20 @@ const BracketSubmission = () => {
                 Details
               </Button>
               <Collapse in={detailsOpen[fixture.match]}>
-                <Box mt={2} p={2} bgcolor="#f5f5f5" borderRadius={2}>
-                  <Typography variant="body2">
+                <Box 
+                  mt={2} 
+                  p={2} 
+                  borderRadius={2}
+                  sx={{
+                    bgcolor: theme.palette.mode === 'dark' 
+                      ? 'rgba(255,255,255,0.05)' 
+                      : '#f5f5f5'
+                  }}
+                >
+                  <Typography variant="body2" color="text.primary">
                     <strong>✨ AI Prediction:</strong> {fixture.aiPrediction}
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography variant="body2" color="text.primary">
                     <strong>📍 Venue:</strong> {fixture.venue}
                   </Typography>
                 </Box>
