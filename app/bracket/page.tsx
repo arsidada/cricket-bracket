@@ -627,7 +627,19 @@ const BracketSubmission = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ pt: '10px' }}>
+    <Container 
+      maxWidth="sm" 
+      disableGutters 
+      sx={{ 
+        pt: '10px',
+        px: { xs: 0.5, sm: 3 },
+        width: '100%',
+        maxWidth: { xs: '100vw', sm: '600px' },
+        overflow: 'hidden',
+        position: 'relative',
+        boxSizing: 'border-box'
+      }}
+    >
       <Box my={4} textAlign="center">
         <Typography variant="h4" gutterBottom>
           Your Bracket
@@ -765,11 +777,22 @@ const BracketSubmission = () => {
           const matchInfo = getMatchTypeInfo(fixture.match);
 
           return (
-            <Paper key={fixture.match} sx={{ 
-              p: 3, 
-              my: 3, 
+            <Box 
+              key={fixture.match}
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                px: { xs: 0.5, sm: 0 },
+                boxSizing: 'border-box'
+              }}
+            >
+              <Paper sx={{ 
+              p: { xs: 0.8, sm: 3 }, 
+              mx: { xs: 0, sm: 0 },
+              my: { xs: 1, sm: 3 }, 
               textAlign: 'center', 
-              borderRadius: 3,
+              borderRadius: { xs: 2, sm: 3 },
               boxShadow: theme.palette.mode === 'dark' 
                 ? '0 4px 20px rgba(0,0,0,0.3)' 
                 : '0 4px 20px rgba(0,0,0,0.1)',
@@ -777,15 +800,41 @@ const BracketSubmission = () => {
                 ? 'linear-gradient(135deg, #2A2A2A 0%, #1E1E1E 100%)'
                 : 'linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%)',
               transition: 'all 0.3s ease-in-out',
+              width: { xs: '100%', sm: 'auto' },
+              maxWidth: { xs: '100%', sm: 'none' },
+              overflow: 'hidden',
+              boxSizing: 'border-box',
+              position: 'relative',
               '&:hover': {
                 boxShadow: theme.palette.mode === 'dark'
                   ? '0 8px 30px rgba(0,0,0,0.4)'
                   : '0 8px 30px rgba(0,0,0,0.15)',
-                transform: 'translateY(-2px)',
+                transform: { xs: 'none', sm: 'translateY(-2px)' },
               },
             }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6" sx={{ fontWeight: 700, flex: 1 }}>
+              <Box 
+                display="flex" 
+                justifyContent="space-between" 
+                alignItems="center" 
+                mb={2}
+                sx={{
+                  width: '100%',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  px: { xs: 0, sm: 0 }
+                }}
+              >
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    flex: 1,
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   Match {fixture.match} - {fixture.date}
                 </Typography>
                 <Chip 
@@ -795,11 +844,27 @@ const BracketSubmission = () => {
                     backgroundColor: matchInfo.color,
                     color: 'white',
                     fontWeight: 600,
-                    fontSize: '0.8rem'
+                    fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                    height: { xs: 24, sm: 32 },
+                    px: { xs: 0.5, sm: 1 },
+                    flexShrink: 0,
+                    ml: { xs: 0.5, sm: 1 }
                   }}
                 />
               </Box>
-              <Box display="flex" justifyContent="center" gap={3} alignItems="center">
+              <Box 
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: { xs: 0.5, sm: 2 },
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  justifyContent: { xs: 'stretch', sm: 'center' },
+                  width: '100%',
+                  maxWidth: '100%',
+                  px: { xs: 0, sm: 1 },
+                  overflow: 'hidden',
+                }}
+              >
                 {isLoading ? (
                   <Skeleton variant="rectangular" width="100%" height={48} sx={{ borderRadius: 2 }} />
                 ) : (
@@ -808,11 +873,18 @@ const BracketSubmission = () => {
                     onClick={() => handleSelection(fixture.match, fixture.team1)}
                     disabled={locked}
                     sx={{
-                      minWidth: 140,
-                      height: 48,
-                      borderRadius: 3,
+                      width: { xs: '100%', sm: 'auto' },
+                      minWidth: { xs: 'auto', sm: 120 },
+                      maxWidth: { xs: '100%', sm: 'none' },
+                      height: { xs: 42, sm: 48 },
+                      borderRadius: { xs: 2, sm: 3 },
                       fontWeight: 600,
-                      fontSize: '1rem',
+                      fontSize: { xs: '0.8rem', sm: '1rem' },
+                      px: { xs: 1, sm: 2 },
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                       backgroundColor: predictions[fixture.match] === fixture.team1 
                         ? teamColors[fixture.team1]?.primary || theme.palette.primary.main
                         : 'transparent',
@@ -838,7 +910,18 @@ const BracketSubmission = () => {
                     {fixture.team1}
                   </Button>
                 )}
-                <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.secondary', mx: 2 }}>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    color: 'text.secondary', 
+                    mx: { xs: 0, sm: 2 },
+                    my: { xs: 0.3, sm: 0 },
+                    fontSize: { xs: '0.9rem', sm: '1.5rem' },
+                    textAlign: 'center',
+                    minHeight: { xs: 'auto', sm: 'auto' }
+                  }}
+                >
                   vs
                 </Typography>
                 {isLoading ? (
@@ -849,11 +932,18 @@ const BracketSubmission = () => {
                     onClick={() => handleSelection(fixture.match, fixture.team2)}
                     disabled={locked}
                     sx={{
-                      minWidth: 140,
-                      height: 48,
-                      borderRadius: 3,
+                      width: { xs: '100%', sm: 'auto' },
+                      minWidth: { xs: 'auto', sm: 120 },
+                      maxWidth: { xs: '100%', sm: 'none' },
+                      height: { xs: 42, sm: 48 },
+                      borderRadius: { xs: 2, sm: 3 },
                       fontWeight: 600,
-                      fontSize: '1rem',
+                      fontSize: { xs: '0.8rem', sm: '1rem' },
+                      px: { xs: 1, sm: 2 },
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                       backgroundColor: predictions[fixture.match] === fixture.team2 
                         ? teamColors[fixture.team2]?.primary || theme.palette.primary.main
                         : 'transparent',
@@ -910,6 +1000,7 @@ const BracketSubmission = () => {
                 </Box>
               </Collapse>
             </Paper>
+            </Box>
           );
         })}
       </TabPanel>

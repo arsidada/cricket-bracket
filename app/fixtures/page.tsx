@@ -64,9 +64,25 @@ const BigChip = styled(Chip)(({ theme }) => ({
   borderRadius: '12px',
   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
   transition: 'all 0.2s ease-in-out',
+  minWidth: '120px',
+  width: 'auto',
+  maxWidth: '100%',
+  boxSizing: 'border-box',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
   '&:hover': {
-    transform: 'translateY(-1px)',
+    transform: { xs: 'none', sm: 'translateY(-1px)' },
     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  },
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '0.85rem',
+    padding: '6px 8px',
+    minWidth: 'auto',
+    width: '100%',
+    maxWidth: 'calc(100vw - 32px)',
+    margin: '1px 0',
+    borderRadius: '8px',
   },
 }));
 
@@ -164,25 +180,39 @@ const AdminFixtureUpdate = ({
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
   borderRadius: '16px',
-  marginBottom: theme.spacing(3),
+  marginBottom: theme.spacing(2),
   border: '1px solid rgba(0,0,0,0.06)',
   overflow: 'hidden',
   transition: 'all 0.3s ease-in-out',
+  width: '100%',
+  maxWidth: '100%',
   '&:before': { display: 'none' },
   '&:hover': {
     boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-    transform: 'translateY(-2px)',
+    transform: { xs: 'none', sm: 'translateY(-2px)' },
   },
   '& .MuiAccordionSummary-root': {
-    padding: theme.spacing(2, 3),
+    padding: theme.spacing(1.5, 1),
     background: theme.palette.mode === 'dark' 
       ? 'linear-gradient(135deg, #2A2A2A 0%, #3A3A3A 100%)'
       : 'linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%)',
     borderRadius: '16px 16px 0 0',
+    [theme.breakpoints.up('sm')]: {
+      padding: theme.spacing(2, 3),
+    },
   },
   '& .MuiAccordionDetails-root': {
-    padding: theme.spacing(2, 3, 3, 3),
+    padding: theme.spacing(1.5, 1, 2, 1),
     background: theme.palette.background.paper,
+    [theme.breakpoints.up('sm')]: {
+      padding: theme.spacing(2, 3, 3, 3),
+    },
+  },
+  [theme.breakpoints.down('sm')]: {
+    marginLeft: theme.spacing(0.5),
+    marginRight: theme.spacing(0.5),
+    width: 'calc(100vw - 16px)',
+    maxWidth: 'calc(100vw - 16px)',
   },
 }));
 
@@ -216,7 +246,14 @@ const FixtureAccordion = ({
     <StyledAccordion>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box sx={{ width: '100%', textAlign: 'center' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: { xs: 'flex-start', sm: 'center' }, 
+            mb: 1,
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1, sm: 0 }
+          }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
               {fixture.date} – Match {fixture.match}
             </Typography>
@@ -231,7 +268,18 @@ const FixtureAccordion = ({
               }}
             />
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 2 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 0.3, sm: 2 }, 
+            justifyContent: { xs: 'stretch', sm: 'center' }, 
+            alignItems: { xs: 'stretch', sm: 'center' },
+            mt: { xs: 1, sm: 2 },
+            px: { xs: 0, sm: 0 },
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'hidden',
+          }}>
             <BigChip
               label={`${teamFlags[fixture.team1] || ''} ${fixture.team1}`}
               sx={{
@@ -247,12 +295,16 @@ const FixtureAccordion = ({
               }}
             />
             <Typography 
-              variant="h6" 
+              variant="body2" 
               sx={{ 
                 alignSelf: 'center', 
-                mx: 1, 
+                mx: { xs: 0, sm: 1 }, 
+                my: { xs: 0.2, sm: 0 },
                 fontWeight: 'bold',
-                color: 'text.secondary'
+                color: 'text.secondary',
+                fontSize: { xs: '0.75rem', sm: '1.2rem' },
+                textAlign: 'center',
+                minHeight: { xs: 'auto', sm: 'auto' }
               }}
             >
               vs
@@ -432,7 +484,17 @@ const Fixtures = () => {
   const showFinals = nowEastern >= finalsStart;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container 
+      maxWidth="lg" 
+      disableGutters
+      sx={{ 
+        py: { xs: 2, sm: 4 }, 
+        px: { xs: 0.5, sm: 3 },
+        width: '100%',
+        maxWidth: { xs: '100vw', sm: '900px' },
+        overflow: 'hidden'
+      }}
+    >
       <Typography variant="h4" align="center" gutterBottom>
         Fixtures
       </Typography>
