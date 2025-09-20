@@ -56,10 +56,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Convert current time to Eastern Time
     const timestampEST = DateTime.now().setZone('America/New_York').toFormat('yyyy-MM-dd HH:mm:ss');
 
-    // Step 1: Fetch existing sheet data from "Playoffs"
+    // Step 1: Fetch existing sheet data from "Super 4"
     const sheetResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'Playoffs!A1:Z1000',
+      range: 'Super 4!A1:Z1000',
     });
     const data = sheetResponse.data.values;
     if (!data || data.length === 0) {
@@ -73,20 +73,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Step 2: If user doesn't have a column, add one (new submission)
     if (userColumnIndex === -1) {
-      eventType = 'PLAYOFFS_SUBMITTED';
-      eventDetails = 'submitted their playoffs picks';
+      eventType = 'SUPER4_SUBMITTED';
+      eventDetails = 'submitted their Super 4 picks';
       userColumnIndex = headers.length;
       headers.push(name);
       await sheets.spreadsheets.values.update({
         spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-        range: 'Playoffs!A1:Z1',
+        range: 'Super 4!A1:Z1',
         valueInputOption: 'RAW',
         requestBody: { values: [headers] },
       });
     } else {
       // Existing column – update submission
-      eventType = 'PLAYOFFS_UPDATED';
-      eventDetails = 'updated their playoffs picks';
+      eventType = 'SUPER4_UPDATED';
+      eventDetails = 'updated their Super 4 picks';
     }
 
     // Step 3: Update each row with the user's picks.
@@ -101,10 +101,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       updatedData[rowIndex][userColumnIndex] = picks[matchNumber];
     }
 
-    // Step 4: Update the "Playoffs" sheet
+    // Step 4: Update the "Super 4" sheet
     await sheets.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'Playoffs!A1:Z1000',
+      range: 'Super 4!A1:Z1000',
       valueInputOption: 'RAW',
       requestBody: { values: updatedData },
     });
@@ -119,7 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       eventDetails
     );
 
-    return res.status(200).json({ message: 'Playoffs picks submitted successfully' });
+    return res.status(200).json({ message: 'Super 4 picks submitted successfully' });
   } catch (error) {
     console.error('Error submitting playoffs picks:', error);
     return res.status(500).json({ error: 'Error submitting playoffs picks' });

@@ -26,14 +26,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const sheets = google.sheets({ version: 'v4', auth });
     
-    // Fetch fixture picks from the "Playoffs" tab (Semi-finals)
+    // Fetch fixture picks from the "Super 4" tab
     const playoffsResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'Playoffs!A1:Z1000',
+      range: 'Super 4!A1:Z1000',
     });
     const playoffsData = playoffsResponse.data.values;
     if (!playoffsData || playoffsData.length === 0) {
-      return res.status(404).json({ error: 'Playoffs sheet is empty' });
+      return res.status(404).json({ error: 'Super 4 sheet is empty' });
     }
     const playoffsHeaders = playoffsData[0];
     const userColumnIndex = playoffsHeaders.indexOf(name);

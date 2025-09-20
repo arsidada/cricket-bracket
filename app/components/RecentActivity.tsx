@@ -26,7 +26,11 @@ interface Activity {
 const eventTypeMap: { [key: string]: string } = {
   BRACKET_SUBMITTED: 'Bracket Submitted 🎉',
   BRACKET_UPDATED: 'Bracket Updated 🔄',
-  FIXTURE_UPDATED: 'Fixture Updated 🏆'
+  FIXTURE_UPDATED: 'Fixture Updated 🏆',
+  SUPER4_SUBMITTED: 'Super 4 Picks Submitted 🟡',
+  SUPER4_UPDATED: 'Super 4 Picks Updated 🔄',
+  PLAYOFFS_SUBMITTED: 'Super 4 Picks Submitted 🟡',
+  PLAYOFFS_UPDATED: 'Super 4 Picks Updated 🔄'
   // Add additional mappings as needed.
 };
 

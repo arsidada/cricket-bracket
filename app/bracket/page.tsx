@@ -82,25 +82,49 @@ const playoffsFixtures: Fixture[] = [
   {
     date: "20 September",
     match: 13,
-    team1: "TBD",
-    team2: "TBD",
-    aiPrediction: "TBD",
+    team1: "Sri Lanka",
+    team2: "Bangladesh",
+    aiPrediction: "Sri Lanka",
     venue: "Dubai International Stadium, Dubai 🇦🇪",
   },
   {
     date: "21 September",
     match: 14,
-    team1: "TBD",
-    team2: "TBD",
-    aiPrediction: "TBD",
+    team1: "India",
+    team2: "Pakistan",
+    aiPrediction: "India",
+    venue: "Dubai International Stadium, Dubai 🇦🇪",
+  },
+  {
+    date: "23 September",
+    match: 15,
+    team1: "Pakistan",
+    team2: "Sri Lanka",
+    aiPrediction: "Pakistan",
     venue: "Sheikh Zayed Stadium, Abu Dhabi 🇦🇪",
   },
   {
-    date: "22 September",
-    match: 15,
-    team1: "TBD",
-    team2: "TBD",
-    aiPrediction: "TBD",
+    date: "24 September",
+    match: 16,
+    team1: "India",
+    team2: "Bangladesh",
+    aiPrediction: "India",
+    venue: "Dubai International Stadium, Dubai 🇦🇪",
+  },
+  {
+    date: "25 September",
+    match: 17,
+    team1: "Pakistan",
+    team2: "Bangladesh",
+    aiPrediction: "Pakistan",
+    venue: "Dubai International Stadium, Dubai 🇦🇪",
+  },
+  {
+    date: "26 September",
+    match: 18,
+    team1: "India",
+    team2: "Sri Lanka",
+    aiPrediction: "India",
     venue: "Dubai International Stadium, Dubai 🇦🇪",
   },
 ];
@@ -190,7 +214,7 @@ const getFixtureStartTime = (fixture: Fixture) => {
 const BracketSubmission = () => {
   const { data: session } = useSession();
   const theme = useTheme();
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(2); // Default to Super 4 tab
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Group stage picks state
@@ -228,7 +252,7 @@ const BracketSubmission = () => {
 
   // Deadlines for each bracket type
   const groupStageDeadline = DateTime.fromISO('2025-09-09T10:30:00', { zone: 'America/New_York' });
-  const playoffsDeadline = DateTime.fromISO('2025-09-20T10:30:00', { zone: 'America/New_York' });
+  const playoffsDeadline = DateTime.fromISO('2025-09-20T10:29:00', { zone: 'America/New_York' });
   const finalsDeadline = DateTime.fromISO('2025-09-28T10:30:00', { zone: 'America/New_York' });
 
   const now = DateTime.now().setZone('America/New_York');
@@ -236,8 +260,8 @@ const BracketSubmission = () => {
   const isPlayoffsPastDeadline = now > playoffsDeadline;
   const isFinalsPastDeadline = now > finalsDeadline;
 
-  // Show Super 4 tab only after group stage deadline passes
-  const showSuper4Tab = isGroupStagePastDeadline;
+  // Show Super 4 tab - enabled now since Super 4 starts tomorrow
+  const showSuper4Tab = true;
   // Show Finals tab only after playoffs deadline passes  
   const showFinalsTab = isPlayoffsPastDeadline;
 
@@ -770,7 +794,7 @@ const BracketSubmission = () => {
         {fixtures.map((fixture) => {
           const getMatchTypeInfo = (matchNum: number) => {
             if (matchNum <= 12) return { label: 'Group Stage', color: '#1B5E20', icon: '⚪' };
-            if (matchNum <= 15) return { label: 'Super 4', color: '#FF6F00', icon: '🟡' };
+            if (matchNum <= 18) return { label: 'Super 4', color: '#FF6F00', icon: '🟡' };
             return { label: 'Final', color: '#D32F2F', icon: '🏆' };
           };
           
@@ -1035,49 +1059,234 @@ const BracketSubmission = () => {
 
       {/* Super 4 Tab */}
       {showSuper4Tab && <TabPanel value={tabValue} index={2}>
-        {playoffsFixtures.map((fixture) => (
-          <Paper key={fixture.match} sx={{ p: 2, my: 2, textAlign: 'center', borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Match {fixture.match} - {fixture.date}
-            </Typography>
-            <Box display="flex" justifyContent="center" gap={2}>
-              <Button
-                variant={playoffsPredictions[fixture.match] === fixture.team1 ? "contained" : "outlined"}
-                onClick={() => handlePlayoffsSelection(fixture.match, fixture.team1)}
-                disabled={isPlayoffsPastDeadline}
-              >
-                {fixture.team1}
-              </Button>
-              <Button
-                variant={playoffsPredictions[fixture.match] === fixture.team2 ? "contained" : "outlined"}
-                onClick={() => handlePlayoffsSelection(fixture.match, fixture.team2)}
-                disabled={isPlayoffsPastDeadline}
-              >
-                {fixture.team2}
-              </Button>
-            </Box>
-            <Button
-              variant="text"
-              color="secondary"
-              size="small"
-              onClick={() => toggleDetails(fixture.match)}
-              endIcon={detailsOpen[fixture.match] ? <ExpandLess /> : <ExpandMore />}
-              sx={{ mt: 1 }}
+        {playoffsFixtures.map((fixture) => {
+          const getMatchTypeInfo = (matchNum: number) => {
+            if (matchNum <= 12) return { label: 'Group Stage', color: '#1B5E20', icon: '⚪' };
+            if (matchNum <= 18) return { label: 'Super 4', color: '#FF6F00', icon: '🟡' };
+            return { label: 'Final', color: '#D32F2F', icon: '🏆' };
+          };
+          
+          const matchInfo = getMatchTypeInfo(fixture.match);
+
+          return (
+            <Box 
+              key={fixture.match}
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                px: { xs: 0.5, sm: 0 },
+                boxSizing: 'border-box'
+              }}
             >
-              Details
-            </Button>
-            <Collapse in={detailsOpen[fixture.match]}>
-              <Box mt={2} p={2} bgcolor="#f5f5f5" borderRadius={2}>
-                <Typography variant="body2">
-                  <strong>✨ AI Prediction:</strong> {fixture.aiPrediction}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>📍 Venue:</strong> {fixture.venue}
-                </Typography>
-              </Box>
-            </Collapse>
-          </Paper>
-        ))}
+              <Paper sx={{ 
+                p: { xs: 0.8, sm: 3 }, 
+                mx: { xs: 0, sm: 0 },
+                my: { xs: 1, sm: 3 }, 
+                textAlign: 'center', 
+                borderRadius: { xs: 2, sm: 3 },
+                boxShadow: theme.palette.mode === 'dark' 
+                  ? '0 4px 20px rgba(0,0,0,0.3)' 
+                  : '0 4px 20px rgba(0,0,0,0.1)',
+                background: theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, #2A2A2A 0%, #1E1E1E 100%)'
+                  : 'linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%)',
+                transition: 'all 0.3s ease-in-out',
+                width: { xs: '100%', sm: 'auto' },
+                maxWidth: { xs: '100%', sm: 'none' },
+                overflow: 'hidden',
+                boxSizing: 'border-box',
+                position: 'relative',
+                '&:hover': {
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 8px 30px rgba(0,0,0,0.4)'
+                    : '0 8px 30px rgba(0,0,0,0.15)',
+                  transform: { xs: 'none', sm: 'translateY(-2px)' },
+                },
+              }}>
+                <Box 
+                  display="flex" 
+                  justifyContent="space-between" 
+                  alignItems="center" 
+                  mb={2}
+                  sx={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    px: { xs: 0, sm: 0 }
+                  }}
+                >
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      flex: 1,
+                      fontSize: { xs: '1rem', sm: '1.25rem' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    Match {fixture.match} - {fixture.date}
+                  </Typography>
+                  <Chip 
+                    label={`${matchInfo.icon} ${matchInfo.label}`}
+                    size="small"
+                    sx={{ 
+                      backgroundColor: matchInfo.color,
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                      height: { xs: 24, sm: 32 },
+                      px: { xs: 0.5, sm: 1 },
+                      flexShrink: 0,
+                      ml: { xs: 0.5, sm: 1 }
+                    }}
+                  />
+                </Box>
+                <Box 
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 0.5, sm: 2 },
+                    alignItems: { xs: 'stretch', sm: 'center' },
+                    justifyContent: { xs: 'stretch', sm: 'center' },
+                    width: '100%',
+                    maxWidth: '100%',
+                    px: { xs: 0, sm: 1 },
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Button
+                    variant={playoffsPredictions[fixture.match] === fixture.team1 ? "contained" : "outlined"}
+                    onClick={() => handlePlayoffsSelection(fixture.match, fixture.team1)}
+                    disabled={isPlayoffsPastDeadline}
+                    sx={{
+                      width: { xs: '100%', sm: 'auto' },
+                      minWidth: { xs: 'auto', sm: 120 },
+                      maxWidth: { xs: '100%', sm: 'none' },
+                      height: { xs: 42, sm: 48 },
+                      borderRadius: { xs: 2, sm: 3 },
+                      fontWeight: 600,
+                      fontSize: { xs: '0.8rem', sm: '1rem' },
+                      px: { xs: 1, sm: 2 },
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      backgroundColor: playoffsPredictions[fixture.match] === fixture.team1 
+                        ? teamColors[fixture.team1]?.primary || theme.palette.primary.main
+                        : 'transparent',
+                      color: playoffsPredictions[fixture.match] === fixture.team1
+                        ? teamColors[fixture.team1]?.secondary || 'white'
+                        : theme.palette.mode === 'dark' 
+                          ? theme.palette.text.primary
+                          : teamColors[fixture.team1]?.primary || theme.palette.primary.main,
+                      borderColor: theme.palette.mode === 'dark'
+                        ? theme.palette.primary.main
+                        : teamColors[fixture.team1]?.primary || theme.palette.primary.main,
+                      borderWidth: 2,
+                      '&:hover': {
+                        backgroundColor: playoffsPredictions[fixture.match] === fixture.team1
+                          ? teamColors[fixture.team1]?.primary || theme.palette.primary.main
+                          : theme.palette.mode === 'dark'
+                            ? `${theme.palette.primary.main}20`
+                            : `${teamColors[fixture.team1]?.primary || theme.palette.primary.main}15`,
+                        borderWidth: 2,
+                      },
+                    }}
+                  >
+                    {fixture.team1}
+                  </Button>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      fontWeight: 'bold', 
+                      color: 'text.secondary', 
+                      mx: { xs: 0, sm: 2 },
+                      my: { xs: 0.3, sm: 0 },
+                      fontSize: { xs: '0.9rem', sm: '1.5rem' },
+                      textAlign: 'center',
+                      minHeight: { xs: 'auto', sm: 'auto' }
+                    }}
+                  >
+                    vs
+                  </Typography>
+                  <Button
+                    variant={playoffsPredictions[fixture.match] === fixture.team2 ? "contained" : "outlined"}
+                    onClick={() => handlePlayoffsSelection(fixture.match, fixture.team2)}
+                    disabled={isPlayoffsPastDeadline}
+                    sx={{
+                      width: { xs: '100%', sm: 'auto' },
+                      minWidth: { xs: 'auto', sm: 120 },
+                      maxWidth: { xs: '100%', sm: 'none' },
+                      height: { xs: 42, sm: 48 },
+                      borderRadius: { xs: 2, sm: 3 },
+                      fontWeight: 600,
+                      fontSize: { xs: '0.8rem', sm: '1rem' },
+                      px: { xs: 1, sm: 2 },
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      backgroundColor: playoffsPredictions[fixture.match] === fixture.team2 
+                        ? teamColors[fixture.team2]?.primary || theme.palette.primary.main
+                        : 'transparent',
+                      color: playoffsPredictions[fixture.match] === fixture.team2
+                        ? teamColors[fixture.team2]?.secondary || 'white'
+                        : theme.palette.mode === 'dark' 
+                          ? theme.palette.text.primary
+                          : teamColors[fixture.team2]?.primary || theme.palette.primary.main,
+                      borderColor: theme.palette.mode === 'dark'
+                        ? theme.palette.primary.main
+                        : teamColors[fixture.team2]?.primary || theme.palette.primary.main,
+                      borderWidth: 2,
+                      '&:hover': {
+                        backgroundColor: playoffsPredictions[fixture.match] === fixture.team2
+                          ? teamColors[fixture.team2]?.primary || theme.palette.primary.main
+                          : theme.palette.mode === 'dark'
+                            ? `${theme.palette.primary.main}20`
+                            : `${teamColors[fixture.team2]?.primary || theme.palette.primary.main}15`,
+                        borderWidth: 2,
+                      },
+                    }}
+                  >
+                    {fixture.team2}
+                  </Button>
+                </Box>
+                <Button
+                  variant="text"
+                  color="secondary"
+                  size="small"
+                  onClick={() => toggleDetails(fixture.match)}
+                  endIcon={detailsOpen[fixture.match] ? <ExpandLess /> : <ExpandMore />}
+                  sx={{ mt: 2 }}
+                >
+                  Details
+                </Button>
+                <Collapse in={detailsOpen[fixture.match]}>
+                  <Box 
+                    mt={2} 
+                    p={2} 
+                    borderRadius={2}
+                    sx={{
+                      bgcolor: theme.palette.mode === 'dark' 
+                        ? 'rgba(255,255,255,0.05)' 
+                        : '#f5f5f5'
+                    }}
+                  >
+                    <Typography variant="body2" color="text.primary">
+                      <strong>✨ AI Prediction:</strong> {fixture.aiPrediction}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary">
+                      <strong>📍 Venue:</strong> {fixture.venue}
+                    </Typography>
+                  </Box>
+                </Collapse>
+              </Paper>
+            </Box>
+          );
+        })}
       </TabPanel>}
 
       {/* Finals Tab */}
