@@ -53,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Fetch sheets with error handling
     const [groupStage, super4, playoffs, links, bonuses, finals] = await Promise.all([
       fetchSheetData('Predictions Overview!A1:Z1000'),
-      fetchSheetData('Super4!A1:Z1000'),
+      fetchSheetData('Super 4!A1:Z1000'),
       fetchSheetData('Playoffs!A1:Z1000'),
       fetchSheetData('Links!A1:C1000'),
       fetchSheetData('Bonuses Overview!A1:Z1000'),

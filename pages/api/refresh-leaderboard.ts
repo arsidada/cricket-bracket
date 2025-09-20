@@ -116,7 +116,11 @@ function calculateLeaderboard(
               initPlayer(playerName);
               if (row[j] === winner) {
                 players[playerName].totalPoints += pointsAwarded;
-                players[playerName].playoffPoints += pointsAwarded;
+                if (stage === "Super 4") {
+                  players[playerName].super4Points += pointsAwarded;
+                } else {
+                  players[playerName].playoffPoints += pointsAwarded;
+                }
               }
             }
           }
@@ -286,7 +290,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       chipsRes
     ] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Predictions Overview!A1:Z1000' }),
-      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Super4!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId, range: 'Super 4!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Playoffs!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Finals!A1:Z1000' }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId, range: 'Bonuses Overview!A1:Z1000' }),

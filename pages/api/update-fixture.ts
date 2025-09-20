@@ -33,11 +33,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   // Determine which bracket the fixture belongs to:
-  // Group Stage: match 1-12, Playoffs: match 13-14, Finals: match 15+
-  let bracketType: 'group' | 'playoffs' | 'finals' = 'group';
-  if (matchNumber >= 13 && matchNumber < 15) {
-    bracketType = 'playoffs';
-  } else if (matchNumber >= 15) {
+  // Group Stage: match 1-12, Super 4: match 13-18, Finals: match 19+
+  let bracketType: 'group' | 'super4' | 'finals' = 'group';
+  if (matchNumber >= 13 && matchNumber < 19) {
+    bracketType = 'super4';
+  } else if (matchNumber >= 19) {
     bracketType = 'finals';
   }
 
@@ -46,8 +46,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let offset = 0;
   if (bracketType === 'group') {
     range = 'Predictions Overview!A1:Z1000';
-  } else if (bracketType === 'playoffs') {
-    range = 'Playoffs!A1:Z1000';
+  } else if (bracketType === 'super4') {
+    range = 'Super 4!A1:Z1000';
     offset = 12; // Using the same offset as in submission logic.
   } else if (bracketType === 'finals') {
     range = 'Finals!A1:Z1000';

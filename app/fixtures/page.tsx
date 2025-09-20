@@ -386,7 +386,7 @@ const transformData = (data: any[][] | undefined): Fixture[] => {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[dateIndex] === 'Date' && row[matchIndex] === 'Match') continue;
-    if (row[winnerIndex]) lastCompletedFixtureIndex = i;
+    if (row[winnerIndex] && row[winnerIndex].trim() !== '') lastCompletedFixtureIndex = i;
     const fixture: Fixture = {
       date: row[dateIndex],
       match: row[matchIndex],
@@ -412,10 +412,65 @@ const transformData = (data: any[][] | undefined): Fixture[] => {
   return fixtures.slice(0, fixturesToShow).reverse();
 };
 
+// Function for fixtures page - shows ALL completed fixtures + next upcoming one
+const transformDataForFixtures = (data: any[][] | undefined): Fixture[] => {
+  if (!data || data.length === 0) return [];
+  const header = data[0];
+  const fixtures: Fixture[] = [];
+  const dateIndex = header.indexOf('Date');
+  const matchIndex = header.indexOf('Match');
+  const team1Index = header.indexOf('Team 1');
+  const team2Index = header.indexOf('Team 2');
+  const winnerIndex = header.indexOf('Winner');
+  if ([dateIndex, matchIndex, team1Index, team2Index, winnerIndex].includes(-1)) {
+    throw new Error('Required columns not found');
+  }
+  
+  let lastCompletedFixtureIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[dateIndex] === 'Date' && row[matchIndex] === 'Match') continue;
+    if (row[winnerIndex] && row[winnerIndex].trim() !== '') lastCompletedFixtureIndex = i;
+    const fixture: Fixture = {
+      date: row[dateIndex],
+      match: row[matchIndex],
+      team1: row[team1Index],
+      team2: row[team2Index],
+      winner: row[winnerIndex],
+      picks: {},
+      rowIndex: i,
+    };
+    for (let j = 0; j < header.length; j++) {
+      const columnName = header[j];
+      if (![header[dateIndex], header[matchIndex], header[team1Index], header[team2Index], 'Winner', 'POTM'].includes(columnName)) {
+        fixture.picks[columnName] = row[j];
+      }
+    }
+    fixtures.push(fixture);
+  }
+  
+  // For fixtures page: show ALL completed + ONLY the next upcoming (if any)
+  if (lastCompletedFixtureIndex === -1) {
+    // No completed fixtures, show only the first upcoming
+    return fixtures.length > 0 ? [fixtures[0]] : [];
+  }
+  
+  // Get only the actually completed fixtures (those with winners)
+  const completedFixtures = fixtures.filter(f => f.winner && f.winner.trim() !== '');
+  
+  // Find the first upcoming fixture (no winner)
+  const nextUpcoming = fixtures.find(f => !f.winner || f.winner.trim() === '');
+  
+  if (nextUpcoming) {
+    return [...completedFixtures, nextUpcoming].reverse();
+  }
+  return completedFixtures.reverse();
+};
+
 const Fixtures = () => {
   const { data: session, status } = useSession();
   const [groupStageFixtures, setGroupStageFixtures] = useState<Fixture[]>([]);
-  const [playoffsFixtures, setPlayoffsFixtures] = useState<Fixture[]>([]);
+  const [super4Fixtures, setSuper4Fixtures] = useState<Fixture[]>([]);
   const [finalsFixtures, setFinalsFixtures] = useState<Fixture[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
@@ -426,9 +481,9 @@ const Fixtures = () => {
         const response = await fetch('/api/sheets', { cache: 'no-store' });
         const result = await response.json();
         if (response.ok) {
-          setGroupStageFixtures(transformData(result.groupStage));
-          setPlayoffsFixtures(transformData(result.playoffs));
-          setFinalsFixtures(transformData(result.finals));
+          setGroupStageFixtures(transformDataForFixtures(result.groupStage));
+          setSuper4Fixtures(transformDataForFixtures(result.super4));
+          setFinalsFixtures(transformDataForFixtures(result.finals));
         } else {
           setError(result.error || 'An error occurred while fetching data');
         }
@@ -476,11 +531,11 @@ const Fixtures = () => {
     );
   }
 
-  // Determine current Eastern time and the playoffs start time (March 4th, 4:00AM ET)
+  // Determine current Eastern time and the Super 4/playoffs start time (Sept 20th, 10:30AM ET)
   const nowEastern = DateTime.now().setZone('America/New_York');
-  const playoffsStart = DateTime.fromISO('2025-03-04T04:00:00', { zone: 'America/New_York' });
-  const finalsStart = DateTime.fromISO('2025-03-09T04:00:00', { zone: 'America/New_York' });
-  const showPlayoffs = nowEastern >= playoffsStart;
+  const super4Start = DateTime.fromISO('2025-09-20T10:30:00', { zone: 'America/New_York' });
+  const finalsStart = DateTime.fromISO('2025-09-28T10:30:00', { zone: 'America/New_York' });
+  const showSuper4 = nowEastern >= super4Start;
   const showFinals = nowEastern >= finalsStart;
 
   return (
@@ -511,14 +566,14 @@ const Fixtures = () => {
         </Box>
       )}
 
-      {/* Playoffs Section - only show if the current time is past the playoffs start time */}
-      {showPlayoffs && playoffsFixtures.length > 0 && (
+      {/* Super 4 Section - only show if the current time is past the Super 4 start time */}
+      {showSuper4 && super4Fixtures.length > 0 && (
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Playoffs
+            Super 4
           </Typography>
-          {playoffsFixtures.map((fixture, index) => (
-            <FixtureAccordion key={`playoffs-${index}`} fixture={fixture} session={session} setSnackbar={setSnackbar} />
+          {super4Fixtures.map((fixture, index) => (
+            <FixtureAccordion key={`super4-${index}`} fixture={fixture} session={session} setSnackbar={setSnackbar} />
           ))}
         </Box>
       )}
