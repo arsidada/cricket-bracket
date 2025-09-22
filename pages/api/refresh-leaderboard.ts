@@ -69,7 +69,7 @@ function calculateLeaderboard(
 
   const processPredictions = (
     data: any[][],
-    pointsPerCorrectPick: number, // used for Group Stage and Super8 (ignored for playoffs/finals)
+    pointsPerCorrectPick: number, // used for Group Stage only (ignored for playoffs/finals/super4)
     stage: string,
     doubleUpMap?: { [player: string]: number }
   ) => {
@@ -109,12 +109,17 @@ function calculateLeaderboard(
           }
         }
         if (correctCount > 0) {
-          const pointsAwarded = Math.floor(pool / correctCount);
+          const basePointsAwarded = Math.floor(pool / correctCount);
           for (let j = 0; j < header.length; j++) {
             const playerName = header[j];
             if (!['Date', 'Match', 'Team 1', 'Team 2', 'Winner', 'POTM'].includes(playerName)) {
               initPlayer(playerName);
               if (row[j] === winner) {
+                let pointsAwarded = basePointsAwarded;
+                // Handle double up chip for Super 4 pool-based scoring
+                if (stage === "Super 4" && doubleUpMap && doubleUpMap[playerName] === matchNumber) {
+                  pointsAwarded = basePointsAwarded * 2;
+                }
                 players[playerName].totalPoints += pointsAwarded;
                 if (stage === "Super 4") {
                   players[playerName].super4Points += pointsAwarded;
@@ -126,22 +131,19 @@ function calculateLeaderboard(
           }
         }
       } else {
-        // For Group Stage and Super 4.
+        // For Group Stage only (Super 4 is handled in pool-based section above).
         for (let j = 0; j < header.length; j++) {
           const playerName = header[j];
           if (!['Date', 'Match', 'Team 1', 'Team 2', 'Winner', 'POTM'].includes(playerName)) {
             initPlayer(playerName);
             if (winner === "DRAW") {
               let pointsAwarded = 5;
+              // Handle double up chip for Group Stage in case of DRAW
               if (stage === "Group Stage" && doubleUpMap && doubleUpMap[playerName] === matchNumber) {
                 pointsAwarded = 10;
               }
               players[playerName].totalPoints += pointsAwarded;
-              if (stage === "Group Stage") {
-                players[playerName].groupPoints += pointsAwarded;
-              } else if (stage === "Super 4") {
-                players[playerName].super4Points += pointsAwarded;
-              }
+              players[playerName].groupPoints += pointsAwarded;
             } else if (row[j] === winner) {
               if (stage === "Group Stage") {
                 const submission = submissionTimeMap[playerName];
@@ -157,15 +159,12 @@ function calculateLeaderboard(
                 }
               }
               let pointsAwarded = pointsPerCorrectPick;
+              // Handle double up chip for Group Stage
               if (stage === "Group Stage" && doubleUpMap && doubleUpMap[playerName] === matchNumber) {
                 pointsAwarded = pointsPerCorrectPick * 2;
               }
               players[playerName].totalPoints += pointsAwarded;
-              if (stage === "Group Stage") {
-                players[playerName].groupPoints += pointsAwarded;
-              } else if (stage === "Super 4") {
-                players[playerName].super4Points += pointsAwarded;
-              }
+              players[playerName].groupPoints += pointsAwarded;
             }
           }
         }
@@ -180,12 +179,8 @@ function calculateLeaderboard(
     console.error("Group Stage data is empty or invalid");
   }
 
-  // Process Super 4 predictions: pool-based scoring like playoffs.
-  if (super4Data && super4Data.length > 0) {
-    processPredictions(super4Data, 0, "Super 4");
-  } else {
-    console.log("Super 4 data is empty; skipping.");
-  }
+  // Process Super 4 predictions: pool-based scoring handled in the main pool-based section above
+  // No separate processing needed here since Super 4 is included in the pool-based logic
 
   // Process Playoffs predictions.
   if (playoffsData && playoffsData.length > 0) {

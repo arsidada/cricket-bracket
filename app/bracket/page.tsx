@@ -332,7 +332,14 @@ const BracketSubmission = () => {
 
   // Get the current time in Eastern Time using Luxon
   const nowEastern = DateTime.now().setZone('America/New_York').toJSDate();
-  const availableFixtures = fixtures.filter(fixture => getFixtureStartTime(fixture) > nowEastern);
+  
+  // Include both group stage fixtures and Super 4 fixtures for chip selection
+  const allFixturesForChips = [
+    ...fixtures.filter(fixture => getFixtureStartTime(fixture) > nowEastern),
+    ...playoffsFixtures.filter(fixture => getFixtureStartTime(fixture) > nowEastern)
+  ].sort((a, b) => a.match - b.match);
+  
+  const availableFixtures = allFixturesForChips;
 
   const handleSelection = (match: number, team: string) => {
     if (locked) return;
@@ -540,41 +547,87 @@ const BracketSubmission = () => {
     setConfirmDialogOpen(false);
   
     if (selectedChipMenu === "wildcard" && selectedWildcard) {
-      const fixture = fixtures.find(f => f.match === selectedWildcard);
+      const fixture = [...fixtures, ...playoffsFixtures].find(f => f.match === selectedWildcard);
       if (!fixture) {
         showSnackbar("Invalid fixture selection.", "error");
         return;
       }
-      const currentPick = predictions[fixture.match];
+      
+      // For Super 4 fixtures, use playoffsPredictions, for group stage use predictions
+      const isSuper4 = fixture.match >= 13;
+      const currentPick = isSuper4 ? playoffsPredictions[fixture.match] : predictions[fixture.match];
+      
+      console.log('Wildcard debug:', { 
+        fixtureMatch: fixture.match, 
+        isSuper4, 
+        currentPick, 
+        team1: fixture.team1, 
+        team2: fixture.team2,
+        playoffsPredictions: isSuper4 ? playoffsPredictions : 'N/A'
+      });
+      
       let newPick: string;
       if (currentPick === fixture.team1) {
         newPick = fixture.team2;
       } else if (currentPick === fixture.team2) {
         newPick = fixture.team1;
       } else {
+        // If no current pick, default to team2
         newPick = fixture.team2;
       }
-      const updatedPicks = { ...predictions, [fixture.match]: newPick };
-      setPredictions(updatedPicks);
       
-      try {
-        const bracketResponse = await fetch('/api/submit-bracket', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            name: session?.user?.name,
-            picks: updatedPicks,
-            bonusAnswers: bonusAnswers,
-            isWildcard: true,
-          }),
-        });
+      // Update the appropriate state
+      if (isSuper4) {
+        const updatedPlayoffsPicks = { ...playoffsPredictions, [fixture.match]: newPick };
+        setPlayoffsPredictions(updatedPlayoffsPicks);
         
-        if (!bracketResponse.ok) {
-          showSnackbar("Failed to update your bracket with the wildcard change.", "error");
+        try {
+          const bracketResponse = await fetch('/api/submit-playoffs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              name: session?.user?.name,
+              picks: updatedPlayoffsPicks,
+            }),
+          });
+          
+          if (!bracketResponse.ok) {
+            showSnackbar("Failed to update your Super 4 picks with the wildcard change.", "error");
+            return;
+          }
+        } catch (error) {
+          showSnackbar("An error occurred while updating Super 4 picks.", "error");
           return;
         }
+      } else {
+        const updatedPicks = { ...predictions, [fixture.match]: newPick };
+        setPredictions(updatedPicks);
         
+        try {
+          const bracketResponse = await fetch('/api/submit-bracket', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              name: session?.user?.name,
+              picks: updatedPicks,
+              bonusAnswers: bonusAnswers,
+              isWildcard: true,
+            }),
+          });
+          
+          if (!bracketResponse.ok) {
+            showSnackbar("Failed to update your bracket with the wildcard change.", "error");
+            return;
+          }
+        } catch (error) {
+          showSnackbar("An error occurred while updating bracket.", "error");
+          return;
+        }
+      }
+      
+      try {
         const chipResponse = await fetch('/api/submit-chips', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -586,7 +639,7 @@ const BracketSubmission = () => {
         });
         
         if (!chipResponse.ok) {
-          showSnackbar("Bracket updated, but failed to record wildcard usage.", "error");
+          showSnackbar("Picks updated, but failed to record wildcard usage.", "error");
           return;
         }
         
@@ -595,7 +648,7 @@ const BracketSubmission = () => {
         setSelectedChipMenu(null);
         setSelectedWildcard(null);
       } catch (error) {
-        showSnackbar("An error occurred while applying the wildcard. Please try again.", "error");
+        showSnackbar("An error occurred while recording wildcard usage.", "error");
       }
     } else if (selectedChipMenu === "doubleUp" && selectedDoubleUp) {
       let chipData: any = { doubleUp: selectedDoubleUp };
@@ -638,9 +691,9 @@ const BracketSubmission = () => {
 
   let chipFixture: Fixture | undefined;
   if (selectedChipMenu === "doubleUp" && selectedDoubleUp) {
-    chipFixture = fixtures.find(f => f.match === selectedDoubleUp);
+    chipFixture = [...fixtures, ...playoffsFixtures].find(f => f.match === selectedDoubleUp);
   } else if (selectedChipMenu === "wildcard" && selectedWildcard) {
-    chipFixture = fixtures.find(f => f.match === selectedWildcard);
+    chipFixture = [...fixtures, ...playoffsFixtures].find(f => f.match === selectedWildcard);
   }
 
   // Helper to set the FAB button label based on the active tab.
