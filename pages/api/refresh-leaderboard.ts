@@ -179,24 +179,17 @@ function calculateLeaderboard(
     console.error("Group Stage data is empty or invalid");
   }
 
-  // Process Super 4 predictions: pool-based scoring handled in the main pool-based section above
-  // No separate processing needed here since Super 4 is included in the pool-based logic
-
-  // Process Playoffs predictions.
-  if (playoffsData && playoffsData.length > 0) {
-    if (playoffsData.length >= 3) {
-      processPredictions(playoffsData.slice(0, 3), 0, "Playoffs Semi-finals");
-    } else {
-      console.log("Playoffs data has fewer than 3 rows; skipping semi-finals processing.");
-    }
-    if (playoffsData.length >= 5) {
-      processPredictions(playoffsData.slice(3, 5), 0, "Playoffs Final");
-    } else {
-      console.log("Playoffs data has fewer than 5 rows; skipping final processing.");
-    }
+  // Process Super 4 predictions: pool-based scoring like playoffs.
+  if (super4Data && super4Data.length > 0) {
+    processPredictions(super4Data, 0, "Super 4", doubleUpChips);
   } else {
-    console.log("Playoffs data is empty; skipping.");
+    console.log("Super 4 data is empty; skipping.");
   }
+
+  // Skip playoffs processing since we don't have a separate "Playoffs" sheet anymore
+  // The "playoffsData" is actually empty since the "Playoffs" sheet doesn't exist
+  // Super 4 data is processed in the pool-based section above
+  console.log("Skipping playoffs processing - using Super 4 data instead.");
 
   // Process Finals predictions.
   if (finalsData && finalsData.length > 0) {
@@ -277,7 +270,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Fetch sheet data from various tabs.
     const [
       groupStageRes,
-      super8Res,
+      super4Res,
       playoffsRes,
       finalsRes,
       bonusesRes, // ignored
@@ -294,7 +287,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ]);
 
     const groupStageData = groupStageRes.data.values || [];
-    const super4Data = super8Res.data.values || [];
+    const super4Data = super4Res.data.values || [];
     const playoffsData = playoffsRes.data.values || [];
     const finalsData = finalsRes.data.values || [];
     const bonusesData: any[] = []; // Explicitly typed as any[]

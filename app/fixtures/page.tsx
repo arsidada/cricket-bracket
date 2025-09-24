@@ -236,7 +236,7 @@ const FixtureAccordion = ({
   const getMatchTypeChip = (matchNum: string) => {
     const match = parseInt(matchNum);
     if (match <= 12) return { label: 'Group Stage', color: '#1B5E20' };
-    if (match <= 15) return { label: 'Super 4', color: '#FF6F00' };
+    if (match <= 18) return { label: 'Super 4', color: '#FF6F00' };
     return { label: 'Final', color: '#D32F2F' };
   };
 
