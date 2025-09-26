@@ -133,10 +133,10 @@ const playoffsFixtures: Fixture[] = [
 const finalsFixtures: Fixture[] = [
   {
     date: "28 September",
-    match: 16,
-    team1: "TBD",
-    team2: "TBD",
-    aiPrediction: "TBD",
+    match: 19,
+    team1: "India",
+    team2: "Pakistan",
+    aiPrediction: "India",
     venue: "Dubai International Stadium, Dubai 🇦🇪",
   },
 ];
@@ -214,7 +214,7 @@ const getFixtureStartTime = (fixture: Fixture) => {
 const BracketSubmission = () => {
   const { data: session } = useSession();
   const theme = useTheme();
-  const [tabValue, setTabValue] = useState(2); // Default to Super 4 tab
+  const [tabValue, setTabValue] = useState(3); // Default to Finals tab
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Group stage picks state

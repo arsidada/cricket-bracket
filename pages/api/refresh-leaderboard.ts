@@ -85,7 +85,14 @@ function calculateLeaderboard(
       const row = data[i];
       const winner = row[winnerIndex];
       if (!winner) continue;
-      const matchNumber = i; // using row index as match number
+      
+      // Calculate actual match number based on stage
+      let matchNumber = i; // Default for group stage
+      if (stage === "Super 4") {
+        matchNumber = 12 + i; // Super 4 matches are 13-18 (rows 1-6)
+      } else if (stage === "Finals") {
+        matchNumber = 18 + i; // Finals start after Super 4
+      }
 
       if (stage === "Playoffs Semi-finals" || stage === "Playoffs Final" || stage === "Finals" || stage === "Super 4") {
         let pool = 0;
@@ -312,15 +319,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Determine the last completed fixture from Group Stage.
+    // Determine the last completed fixture from ALL stages (Group Stage + Super 4).
     let lastFixture = 0;
+    
+    // Check Group Stage (matches 1-12)
     if (groupStageData.length > 1) {
       const header = groupStageData[0];
       const winnerIndex = header.indexOf('Winner');
       for (let i = 1; i < groupStageData.length; i++) {
         const row = groupStageData[i];
         if (row[winnerIndex] && row[winnerIndex].trim() !== '') {
-          lastFixture = i;
+          lastFixture = i; // This will be 1-12 for group stage
+        }
+      }
+    }
+    
+    // Check Super 4 (matches 13-18)
+    if (super4Data.length > 1) {
+      const header = super4Data[0];
+      const winnerIndex = header.indexOf('Winner');
+      const matchIndex = header.indexOf('Match');
+      for (let i = 1; i < super4Data.length; i++) {
+        const row = super4Data[i];
+        if (row[winnerIndex] && row[winnerIndex].trim() !== '') {
+          const matchNumber = parseInt(row[matchIndex]) || (12 + i); // Use actual match number from sheet
+          lastFixture = Math.max(lastFixture, matchNumber);
         }
       }
     }
