@@ -727,38 +727,39 @@ const BracketSubmission = () => {
       </Box>
 
       {/* --- CHIP ACTIVATION UI --- */}
-      <Box textAlign="center" my={4}>
-        <Typography variant="h5" gutterBottom>
-          Activate a Chip
-        </Typography>
-        <Box display="flex" justifyContent="center" gap={2}>
-          <IconButton
-            onClick={() => handleChipMenuToggle("doubleUp")}
-            disabled={userChips.doubleUp !== null}
-            size="large"
-            sx={{
-              backgroundColor: 'grey.200',
-              '&:hover': { backgroundColor: 'grey.300' },
-              borderRadius: '50%',
-              p: 1.5,
-            }}
-          >
-            <LooksTwoIcon color={userChips.doubleUp !== null ? "disabled" : "primary"} />
-          </IconButton>
-          <IconButton
-            onClick={() => handleChipMenuToggle("wildcard")}
-            disabled={userChips.wildcard !== null}
-            size="large"
-            sx={{
-              backgroundColor: 'grey.200',
-              '&:hover': { backgroundColor: 'grey.300' },
-              borderRadius: '50%',
-              p: 1.5,
-            }}
-          >
-            <ShuffleIcon color={userChips.wildcard !== null ? "disabled" : "primary"} />
-          </IconButton>
-        </Box>
+      {tabValue !== 3 && (
+        <Box textAlign="center" my={4}>
+          <Typography variant="h5" gutterBottom>
+            Activate a Chip
+          </Typography>
+          <Box display="flex" justifyContent="center" gap={2}>
+            <IconButton
+              onClick={() => handleChipMenuToggle("doubleUp")}
+              disabled={userChips.doubleUp !== null}
+              size="large"
+              sx={{
+                backgroundColor: 'grey.200',
+                '&:hover': { backgroundColor: 'grey.300' },
+                borderRadius: '50%',
+                p: 1.5,
+              }}
+            >
+              <LooksTwoIcon color={userChips.doubleUp !== null ? "disabled" : "primary"} />
+            </IconButton>
+            <IconButton
+              onClick={() => handleChipMenuToggle("wildcard")}
+              disabled={userChips.wildcard !== null}
+              size="large"
+              sx={{
+                backgroundColor: 'grey.200',
+                '&:hover': { backgroundColor: 'grey.300' },
+                borderRadius: '50%',
+                p: 1.5,
+              }}
+            >
+              <ShuffleIcon color={userChips.wildcard !== null ? "disabled" : "primary"} />
+            </IconButton>
+          </Box>
         {selectedChipMenu === "doubleUp" && (
           <Box mt={2}>
             <Typography variant="subtitle1">Double Up Chip</Typography>
@@ -808,10 +809,12 @@ const BracketSubmission = () => {
             </Button>
           </Box>
         )}
-      </Box>
+        </Box>
+      )}
 
       {/* --- CONFIRM CHIP ACTIVATION DIALOG --- */}
-      <Dialog open={confirmDialogOpen} onClose={handleConfirmCancel}>
+      {tabValue !== 3 && (
+        <Dialog open={confirmDialogOpen} onClose={handleConfirmCancel}>
         <DialogTitle>Confirm Chip Activation</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -830,7 +833,8 @@ const BracketSubmission = () => {
             Confirm
           </Button>
         </DialogActions>
-      </Dialog>
+        </Dialog>
+      )}
 
       {/* --- TABS FOR BRACKET SUBMISSION --- */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
